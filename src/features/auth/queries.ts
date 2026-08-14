@@ -75,13 +75,12 @@ export async function createUser<
     `;
     return { success: true, data: user ?? null };
   } catch (error) {
+    const isPostgresError = checkPostgresError(error);
+    if (isPostgresError && error.code === "23505") {
+      return { success: true, data: null };
+    }
     console.error("[DATABASE] Query error.\n", error);
-    return {
-      success: false,
-      ...(error instanceof postgres.PostgresError && error.code === "23505"
-        ? { message: { email: "Email address not available." } }
-        : {}),
-    };
+    return { success: false };
   }
 }
 
@@ -93,4 +92,13 @@ function getOutputFieldsQuery(output: OutputOptions) {
     if (isInclude) outputFields.push(fieldName);
   });
   return sql(outputFields);
+}
+
+function checkPostgresError(error: unknown): error is postgres.PostgresError {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "name" in error &&
+    (error as { name: string }).name === "PostgresError"
+  );
 }
