@@ -23,6 +23,10 @@ export default auth((req) => {
         return NextResponse.redirect(new URL("/client", nextUrl));
       }
 
+      if (isClientRoute && userRole === "AGENT") {
+        return NextResponse.redirect(new URL("/agent", nextUrl));
+      }
+
       return NextResponse.next();
     }
 
@@ -30,7 +34,8 @@ export default auth((req) => {
   }
 
   if (isLoggedIn) {
-    return NextResponse.redirect(new URL("/client", nextUrl));
+    const targetRoute = userRole === "CLIENT" ? "/client" : "/agent";
+    return NextResponse.redirect(new URL(targetRoute, nextUrl));
   }
 
   return NextResponse.next();
