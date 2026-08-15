@@ -1,21 +1,26 @@
 import { Metadata } from "next";
 import { redirect, RedirectType } from "next/navigation";
 import { SidebarInset } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
 import { DashboardHeader } from "@/components/shared/dashboard-header";
 import { auth } from "@/lib/auth";
 
 export const metadata: Metadata = {
-  title: "Dashboard",
+  title: "Manage Users",
 };
 
-export default async function AgentDashboardPage() {
+export default async function AgentManageUsersPage() {
   const session = await auth();
   if (!session) return redirect("/signin", RedirectType.replace);
   if (session.user.role !== "AGENT") return redirect("/client", RedirectType.replace);
 
   return (
     <SidebarInset>
-      <DashboardHeader userRole={session.user.role} dashboardTitle="Overview & Tickets" />
+      <DashboardHeader
+        userRole={session.user.role}
+        dashboardTitle="User Management"
+        actionButton={<Button>Add New User</Button>}
+      />
       <main className="flex flex-1 flex-col gap-4 p-4 pt-0">
         <div className="grid auto-rows-min gap-4 md:grid-cols-3">
           <div className="aspect-video rounded-xl bg-muted/50" />

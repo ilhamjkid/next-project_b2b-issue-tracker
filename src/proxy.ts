@@ -10,27 +10,24 @@ export default auth((req) => {
     return NextResponse.next();
   }
 
-  if (!nextUrl.pathname.startsWith("/sign")) {
-    const isAgentRoute = nextUrl.pathname.startsWith("/agent");
-    const isClientRoute = nextUrl.pathname.startsWith("/client");
+  if (!nextUrl.pathname.startsWith("/signin")) {
+    if (!isLoggedIn) {
+      return NextResponse.redirect(new URL("/signin", nextUrl));
+    }
 
-    if (isAgentRoute || isClientRoute) {
-      if (!isLoggedIn) {
-        return NextResponse.redirect(new URL("/signin", nextUrl));
+    if (userRole === "AGENT") {
+      if (nextUrl.pathname.startsWith("/agent")) {
+        return NextResponse.next();
       }
 
-      if (isAgentRoute && userRole === "CLIENT") {
-        return NextResponse.redirect(new URL("/client", nextUrl));
-      }
+      return NextResponse.redirect(new URL("/agent", nextUrl));
+    }
 
-      if (isClientRoute && userRole === "AGENT") {
-        return NextResponse.redirect(new URL("/agent", nextUrl));
-      }
-
+    if (nextUrl.pathname.startsWith("/client")) {
       return NextResponse.next();
     }
 
-    return NextResponse.next();
+    return NextResponse.redirect(new URL("/client", nextUrl));
   }
 
   if (isLoggedIn) {

@@ -1,15 +1,25 @@
-import { Button } from "@/components/ui/button";
-import { signout } from "@/features/auth/actions";
+import { redirect, RedirectType } from "next/navigation";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { AppSidebar } from "@/components/shared/app-sidebar";
+import { auth } from "@/lib/auth";
 
-export default function DashboardLayout({ children }: LayoutProps<"/">) {
+export default async function DashboardLayout({ children }: LayoutProps<"/">) {
+  const session = await auth();
+  if (!session) return redirect("/signin", RedirectType.replace);
+
   return (
-    <main className="min-h-screen flex flex-col justify-center items-center gap-6">
-      {children}
-      <form action={signout} className="w-48 flex flex-col">
-        <Button type="submit" className="rounded-sm text-xl font-semibold py-6 px-4">
-          SIGN OUT
-        </Button>
-      </form>
-    </main>
+    <TooltipProvider>
+      <SidebarProvider
+        style={
+          {
+            "--sidebar-width": "19rem",
+          } as React.CSSProperties
+        }
+      >
+        <AppSidebar user={session.user} />
+        {children}
+      </SidebarProvider>
+    </TooltipProvider>
   );
 }
