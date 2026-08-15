@@ -1,11 +1,10 @@
 "use client";
 
 import { useActionState } from "react";
-import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { StatusAlert } from "@/components/shared/status-alert";
 import { signin } from "@/features/auth/actions";
@@ -33,7 +32,7 @@ export function SigninForm({ className, ...props }: React.ComponentProps<"div">)
                   id="email"
                   type="email"
                   name="email"
-                  placeholder="john@doe.com"
+                  placeholder="john.doe@gmail.com"
                   defaultValue={state?.values?.email ?? ""}
                 />
                 {state?.errors?.email &&
@@ -57,9 +56,6 @@ export function SigninForm({ className, ...props }: React.ComponentProps<"div">)
                 <Button type="submit" disabled={isPending}>
                   {isPending ? "Processing..." : "Sign In"}
                 </Button>
-                <FieldDescription className="text-center">
-                  Don&apos;t have an account? <Link href="/signup">Sign up</Link>
-                </FieldDescription>
               </Field>
             </FieldGroup>
           </form>
