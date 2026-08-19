@@ -1,4 +1,3 @@
-import postgres from "postgres";
 import { sql } from "@/lib/db/client";
 
 type User = {
@@ -9,9 +8,9 @@ type User = {
   role: "CLIENT" | "AGENT";
   created_at: string;
 };
-type CreateInputOptions = Omit<User, "id" | "role" | "created_at"> & Partial<Pick<User, "role">>;
-type WhereOptions = { id: string; email?: undefined } | { id?: undefined; email: string };
-type OutputOptions = "ALL_FIELDS" | Partial<Record<keyof User, boolean>>;
+type OutputOptions =
+  | "ALL_FIELDS"
+  | ({ id: true } & Partial<Record<Exclude<keyof User, "id">, boolean>>);
 type OutputFields<TOutputOptions> = TOutputOptions extends "ALL_FIELDS"
   ? User
   : {
@@ -21,64 +20,24 @@ type OutputFields<TOutputOptions> = TOutputOptions extends "ALL_FIELDS"
           : never
         : never]: User[Key];
     };
-type Result<
-  Data extends OutputFields<OutputOptions>,
-  Input extends CreateInputOptions | undefined = undefined,
-> = Promise<
-  | {
-      success: true;
-      data: Data | null;
-    }
-  | {
-      success: false;
-      message?: Input extends undefined //
-        ? string
-        : string | Partial<Record<keyof Input, string>>;
-    }
+type Result<OutputData extends OutputFields<OutputOptions>> = Promise<
+  { success: true; data: OutputData } | { success: false; message?: string }
 >;
 
-export async function getSingleUser<
+export async function getSingleUserByEmail<
   const TOutputOptions extends OutputOptions = OutputOptions,
->(options: { where: WhereOptions; output: TOutputOptions }): Result<OutputFields<TOutputOptions>> {
+>(options: { userEmail: string; output: TOutputOptions }): Result<OutputFields<TOutputOptions>> {
   try {
     const outputFieldsQuery = getOutputFieldsQuery(options.output);
 
     const [user] = await sql<OutputFields<TOutputOptions>[]>`
       SELECT ${outputFieldsQuery} FROM users
-      WHERE ${options.where.id ? sql`id` : sql`email`}
-      = ${options.where.id ?? options.where.email}
+      WHERE email = ${options.userEmail}
     `;
-    return { success: true, data: user ?? null };
+    if (!user) return { success: false, message: "User data not found." };
+
+    return { success: true, data: user };
   } catch (error) {
-    console.error("[DATABASE] Query error.\n", error);
-    return { success: false };
-  }
-}
-
-export async function createUser<
-  const TOutputOptions extends OutputOptions = OutputOptions,
->(options: {
-  input: CreateInputOptions;
-  output: TOutputOptions;
-}): Result<OutputFields<TOutputOptions>, CreateInputOptions> {
-  try {
-    const inputData = { ...options.input };
-    if (inputData.role === undefined) {
-      delete inputData.role;
-    }
-
-    const outputFieldsQuery = getOutputFieldsQuery(options.output);
-
-    const [user] = await sql<OutputFields<TOutputOptions>[]>`
-      INSERT INTO users ${sql(inputData)}
-      RETURNING ${outputFieldsQuery}
-    `;
-    return { success: true, data: user ?? null };
-  } catch (error) {
-    const isPostgresError = checkPostgresError(error);
-    if (isPostgresError && error.code === "23505") {
-      return { success: true, data: null };
-    }
     console.error("[DATABASE] Query error.\n", error);
     return { success: false };
   }
@@ -92,13 +51,4 @@ function getOutputFieldsQuery(output: OutputOptions) {
     if (isInclude) outputFields.push(fieldName);
   });
   return sql(outputFields);
-}
-
-function checkPostgresError(error: unknown): error is postgres.PostgresError {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "name" in error &&
-    (error as { name: string }).name === "PostgresError"
-  );
 }

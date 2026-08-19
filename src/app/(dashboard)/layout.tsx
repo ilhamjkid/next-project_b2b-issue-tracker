@@ -1,12 +1,10 @@
-import { redirect, RedirectType } from "next/navigation";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppSidebar } from "@/components/shared/app-sidebar";
-import { auth } from "@/lib/auth";
+import { requireAuth } from "@/lib/access";
 
 export default async function DashboardLayout({ children }: LayoutProps<"/">) {
-  const session = await auth();
-  if (!session) return redirect("/signin", RedirectType.replace);
+  const user = await requireAuth();
 
   return (
     <TooltipProvider>
@@ -17,7 +15,7 @@ export default async function DashboardLayout({ children }: LayoutProps<"/">) {
           } as React.CSSProperties
         }
       >
-        <AppSidebar user={session.user} />
+        <AppSidebar user={user} />
         {children}
       </SidebarProvider>
     </TooltipProvider>

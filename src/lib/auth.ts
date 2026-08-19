@@ -1,10 +1,10 @@
-import NextAuth from "next-auth";
+import NextAuth, { AuthError } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { signinFormSchema } from "@/features/auth/schemas";
-import { getSingleUser } from "@/features/auth/queries";
+import { getSingleUserByEmail } from "@/features/auth/queries";
 import { comparePassword } from "@/lib/password";
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
+export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
   providers: [
     Credentials({
       credentials: {
@@ -21,38 +21,42 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const validatedFieldsResult = signinFormSchema.safeParse(credentials);
         if (!validatedFieldsResult.success) return null;
 
-        const userResult = await getSingleUser({
-          where: { email: validatedFieldsResult.data.email },
-          output: { id: true, name: true, email: true, password_hash: true, role: true },
+        const userResult = await getSingleUserByEmail({
+          userEmail: validatedFieldsResult.data.email,
+          output: "ALL_FIELDS",
         });
-        if (!userResult.success) return null;
-        if (userResult.data === null) return null;
+        if (!userResult.success) {
+          if (userResult.message) return null;
+          throw new AuthError("Internal Server Error");
+        }
 
-        const user = userResult.data;
+        const { id, name, email, password_hash, role } = userResult.data;
 
         const passwordComparisonResult = await comparePassword(
           validatedFieldsResult.data.password,
-          user.password_hash,
+          password_hash,
         );
-        if (!passwordComparisonResult.success) return null;
+        if (!passwordComparisonResult.success) {
+          throw new AuthError("Internal Server Error");
+        }
         if (passwordComparisonResult.data === false) return null;
 
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-        };
+        return { id, name, email, role };
       },
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id;
         token.name = user.name;
         token.email = user.email;
         token.role = user.role;
+      }
+      if (trigger === "update" && session?.user) {
+        if (session.user.name) token.name = session.user.name;
+        if (session.user.email) token.email = session.user.email;
+        if (session.user.role) token.role = session.user.role;
       }
       return token;
     },

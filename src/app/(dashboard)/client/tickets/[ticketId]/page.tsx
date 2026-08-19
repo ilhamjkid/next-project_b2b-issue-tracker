@@ -1,10 +1,9 @@
 import { Metadata } from "next";
-import { redirect, RedirectType } from "next/navigation";
 import Link from "next/link";
 import { SidebarInset } from "@/components/ui/sidebar";
 import { buttonVariants } from "@/components/ui/button";
 import { DashboardHeader } from "@/components/shared/dashboard-header";
-import { auth } from "@/lib/auth";
+import { requireAuth } from "@/lib/access";
 
 export const metadata: Metadata = {
   title: "Ticket Detail",
@@ -13,24 +12,17 @@ export const metadata: Metadata = {
 export default async function ClientTicketDetailPage(props: {
   params: Promise<{ ticketId: string }>;
 }) {
-  const session = await auth();
-  if (!session) return redirect("/signin", RedirectType.replace);
-  if (session.user.role !== "CLIENT") return redirect("/agent", RedirectType.replace);
-
+  const user = await requireAuth("CLIENT");
   const params = await props.params;
   const ticketId = params.ticketId;
 
   return (
     <SidebarInset>
-      <DashboardHeader
-        userRole={session.user.role}
-        dashboardTitle={ticketId}
-        actionButton={
-          <Link href="/client" className={buttonVariants()}>
-            Back to Dashboard
-          </Link>
-        }
-      />
+      <DashboardHeader role={user.role} title={ticketId}>
+        <Link href="/client" className={buttonVariants()}>
+          Back to Dashboard
+        </Link>
+      </DashboardHeader>
       <main className="flex flex-1 flex-col gap-4 p-4 pt-0">
         <div className="grid auto-rows-min gap-4 md:grid-cols-3">
           <div className="aspect-video rounded-xl bg-muted/50" />
