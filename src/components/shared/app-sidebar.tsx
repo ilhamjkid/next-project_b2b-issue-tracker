@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { ToggleTheme } from "@/components/shared/toggle-theme";
-import { signout } from "@/features/auth/actions";
+import { handleSignout } from "@/features/auth/actions";
 
 type UserSignIn = {
   id: string;
@@ -42,7 +42,7 @@ export function AppSidebar({
   ...props
 }: { user: UserSignIn } & React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
-  const [, formAction, isPending] = React.useActionState(signout, undefined);
+  const [, formAction, isPending] = React.useActionState(handleSignout, undefined);
 
   function isActiveLink(pathname: string, url: string, subUrl?: string) {
     if (!subUrl) return pathname === url;

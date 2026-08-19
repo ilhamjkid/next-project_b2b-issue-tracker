@@ -1,21 +1,25 @@
 "use client";
 
-import { useActionState } from "react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import * as React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { StatusAlert } from "@/components/shared/status-alert";
-import { signin } from "@/features/auth/actions";
+import { handleSignin } from "@/features/auth/actions";
+import { cn } from "@/lib/utils";
 
 export function SigninForm({ className, ...props }: React.ComponentProps<"div">) {
-  const [state, formAction, isPending] = useActionState(signin, undefined);
+  const [state, formAction, isPending] = React.useActionState(handleSignin, undefined);
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      {state?.success === false && (
-        <StatusAlert variant="error" title="Sign-in failed" description={state.message} />
+      {state && !state.success && (
+        <StatusAlert
+          variant="error"
+          title="Sign-in failed"
+          description={state.message ?? "An error occurred on our server."}
+        />
       )}
       <Card>
         <CardHeader>

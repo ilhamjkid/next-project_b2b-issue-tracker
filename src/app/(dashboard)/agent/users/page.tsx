@@ -1,34 +1,46 @@
 import { Metadata } from "next";
-import { redirect, RedirectType } from "next/navigation";
+import { Inbox } from "lucide-react";
 import { SidebarInset } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
-import { DashboardHeader } from "@/components/shared/dashboard-header";
-import { auth } from "@/lib/auth";
+import { AgentUserHeader } from "@/features/users/components/agent-user-header";
+import { UserTable } from "@/features/users/components/user-table";
+import { getUsers } from "@/features/users/queries";
+import { requireAuth } from "@/lib/access";
 
 export const metadata: Metadata = {
   title: "Manage Users",
 };
 
 export default async function AgentManageUsersPage() {
-  const session = await auth();
-  if (!session) return redirect("/signin", RedirectType.replace);
-  if (session.user.role !== "AGENT") return redirect("/client", RedirectType.replace);
+  const user = await requireAuth("AGENT");
+  const userResult = await getUsers({
+    output: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      created_at: true,
+    },
+  });
+  if (!userResult.success) {
+    throw new Error(userResult.message ?? "Internal Server Error");
+  }
+
+  const { data: users } = userResult;
 
   return (
     <SidebarInset>
-      <DashboardHeader
-        userRole={session.user.role}
-        dashboardTitle="User Management"
-        actionButton={<Button>Add New User</Button>}
-      />
-      <main className="flex flex-1 flex-col gap-4 p-4 pt-0">
-        <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-          <div className="aspect-video rounded-xl bg-muted/50" />
-          <div className="aspect-video rounded-xl bg-muted/50" />
-          <div className="aspect-video rounded-xl bg-muted/50" />
-        </div>
-        <div className="min-h-screen flex-1 rounded-xl bg-muted/50 md:min-h-min" />
-      </main>
+      <AgentUserHeader userRole={user.role} />
+      <section className="p-4">
+        {users.length > 0 ? (
+          <UserTable users={users} />
+        ) : (
+          <div className="text-center">
+            <Inbox className="w-20 h-20 text-warning mx-auto mb-4" />
+            <h2 className="text-3xl mb-2">Empty user</h2>
+            <p className="text-muted-foreground text-lg">User account empty. Add one.</p>
+          </div>
+        )}
+      </section>
     </SidebarInset>
   );
 }
