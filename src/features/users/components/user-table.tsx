@@ -12,24 +12,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { UserFormDialog } from "@/features/users/components/user-form-dialog";
 import { UserDeleteDialog } from "@/features/users/components/user-delete-dialog";
+import { UserActiveDialog, UserEntity } from "@/features/users/types";
 
-type ActiveDialog =
-  | { type?: undefined; id?: undefined }
-  | { type: "CREATE"; id?: undefined }
-  | { type: "UPDATE" | "DELETE"; id: string };
-
-export function UserTable({
-  users,
-}: {
-  users: {
-    id: string;
-    name: string;
-    email: string;
-    role: "CLIENT" | "AGENT";
-    created_at: string;
-  }[];
-}) {
-  const [activeDialog, setActiveDialog] = React.useState<ActiveDialog>({
+export function UserTable({ users }: { users: Omit<UserEntity, "password_hash">[] }) {
+  const [activeDialog, setActiveDialog] = React.useState<UserActiveDialog>({
     type: undefined,
     id: undefined,
   });
@@ -55,7 +41,7 @@ export function UserTable({
               {new Intl.DateTimeFormat("en-US", {
                 dateStyle: "medium",
                 timeStyle: "short",
-              }).format(new Date(user.created_at))}
+              }).format(user.created_at)}
             </TableCell>
             <TableCell className="flex gap-1">
               {activeDialog.type === "UPDATE" && activeDialog.id === user.id ? (

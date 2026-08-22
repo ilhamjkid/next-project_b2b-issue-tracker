@@ -1,19 +1,11 @@
 "use server";
 
-import * as z from "zod";
 import { AuthError } from "next-auth";
+import { SigninFormState } from "@/features/auth/types";
 import { signinFormSchema } from "@/features/auth/schemas";
-import { getSingleUserByEmail } from "@/features/auth/queries";
+import { getUserByEmail } from "@/features/users/queries";
+import { getFieldErrors } from "@/lib/zod";
 import { signIn, signOut } from "@/lib/auth";
-
-type SigninFormState =
-  | {
-      success: boolean;
-      message?: string;
-      values?: { email?: string };
-      errors?: { email?: string[]; password?: string[] };
-    }
-  | undefined;
 
 const ERROR_MESSAGES = {
   SERVER_ERROR: "An error occurred on our server.",
@@ -31,18 +23,17 @@ export async function handleSignin(
   });
   if (!validatedFieldsResult.success) {
     const email = String(formData.get("email") ?? "");
-    const values = { ...(email ? { email } : {}) };
     return {
       success: false,
       message: ERROR_MESSAGES.VALIDATION_FAILED,
-      errors: z.flattenError(validatedFieldsResult.error).fieldErrors,
-      ...(Object.keys(values).length > 0 ? { values } : {}),
+      errors: getFieldErrors(validatedFieldsResult.error),
+      ...(email ? { values: { email } } : {}),
     };
   }
 
   const { email, password } = validatedFieldsResult.data;
 
-  const userResult = await getSingleUserByEmail({
+  const userResult = await getUserByEmail({
     userEmail: email,
     output: { id: true, role: true },
   });

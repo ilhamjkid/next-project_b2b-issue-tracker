@@ -17,14 +17,8 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { ToggleTheme } from "@/components/shared/toggle-theme";
+import { UserEntity } from "@/features/users/types";
 import { handleSignout } from "@/features/auth/actions";
-
-type UserSignIn = {
-  id: string;
-  name: string;
-  email: string;
-  role: "CLIENT" | "AGENT";
-};
 
 const navMain = {
   AGENT: [
@@ -40,7 +34,9 @@ const navMain = {
 export function AppSidebar({
   user,
   ...props
-}: { user: UserSignIn } & React.ComponentProps<typeof Sidebar>) {
+}: { user: Omit<UserEntity, "password_hash" | "created_at"> } & React.ComponentProps<
+  typeof Sidebar
+>) {
   const pathname = usePathname();
   const [, formAction, isPending] = React.useActionState(handleSignout, undefined);
 

@@ -24,39 +24,30 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { StatusAlert } from "@/components/shared/status-alert";
+import { SetUserActiveDialog, UserActiveDialog, UserEntity } from "@/features/users/types";
 import { handleCreateUser, handleUpdateUser } from "@/features/users/actions";
 
-type ActiveDialog =
-  | { type?: undefined; id?: undefined }
-  | { type: "CREATE"; id?: undefined }
-  | { type: "UPDATE" | "DELETE"; id: string };
-
 type CreateUserFormDialogProps = {
-  activeDialog: ActiveDialog;
-  setActiveDialog: (newActiveDialog: ActiveDialog) => void;
+  activeDialog: UserActiveDialog;
+  setActiveDialog: SetUserActiveDialog;
   mode: "CREATE";
   userId?: undefined;
   defaultValues?: undefined;
   button: React.ReactElement;
 };
 type UpdateUserFormDialogProps = {
-  activeDialog: ActiveDialog;
-  setActiveDialog: (newActiveDialog: ActiveDialog) => void;
+  activeDialog: UserActiveDialog;
+  setActiveDialog: SetUserActiveDialog;
   mode: "UPDATE";
   userId: string;
-  defaultValues: {
-    id: string;
-    name: string;
-    email: string;
-    role: "CLIENT" | "AGENT";
-  };
+  defaultValues: Omit<UserEntity, "password_hash" | "created_at">;
   button: React.ReactElement;
 };
 
 const roleItems = [
   { label: "Client", value: "CLIENT" },
   { label: "Agent", value: "AGENT" },
-];
+] as const;
 
 export function UserFormDialog({
   activeDialog,

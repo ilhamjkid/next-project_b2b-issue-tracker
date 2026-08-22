@@ -1,9 +1,9 @@
 import bcrypt from "bcryptjs";
 
-type Result<Data extends string | boolean> = Promise<
+type PasswordResult<TOutputData extends string | boolean> = Promise<
   | {
       success: true;
-      data: Data;
+      data: TOutputData;
     }
   | {
       success: false;
@@ -11,7 +11,10 @@ type Result<Data extends string | boolean> = Promise<
     }
 >;
 
-export async function hashPassword(password: string, salt: number | string = 10): Result<string> {
+export async function hashPassword(
+  password: string,
+  salt: number | string = 10,
+): PasswordResult<string> {
   try {
     const hashedPassword = await bcrypt.hash(password, salt);
     return { success: true, data: hashedPassword };
@@ -21,7 +24,7 @@ export async function hashPassword(password: string, salt: number | string = 10)
   }
 }
 
-export async function comparePassword(password: string, hash: string): Result<boolean> {
+export async function comparePassword(password: string, hash: string): PasswordResult<boolean> {
   try {
     const comparisonResult = await bcrypt.compare(password, hash);
     return { success: true, data: comparisonResult };

@@ -1,31 +1,16 @@
 import { redirect, RedirectType } from "next/navigation";
+import { UserEntity } from "@/features/users/types";
 import { auth } from "@/lib/auth";
 
-export async function requireAuth(userRole: "CLIENT"): Promise<{
-  id: string;
-  name: string;
-  email: string;
-  role: "CLIENT";
-}>;
-export async function requireAuth(userRole: "AGENT"): Promise<{
-  id: string;
-  name: string;
-  email: string;
-  role: "AGENT";
-}>;
-export async function requireAuth(userRole?: undefined): Promise<{
-  id: string;
-  name: string;
-  email: string;
-  role: "CLIENT" | "AGENT";
-}>;
+type AuthUser = Omit<UserEntity, "password_hash" | "created_at">;
+type AuthClientUser = Omit<AuthUser, "role"> & { role: "CLIENT" };
+type AuthAgentUser = Omit<AuthUser, "role"> & { role: "AGENT" };
 
-export async function requireAuth(userRole?: "CLIENT" | "AGENT" | undefined): Promise<{
-  id: string;
-  name: string;
-  email: string;
-  role: "CLIENT" | "AGENT";
-}> {
+export async function requireAuth(userRole?: undefined): Promise<AuthUser>;
+export async function requireAuth(userRole: AuthClientUser["role"]): Promise<AuthClientUser>;
+export async function requireAuth(userRole: AuthAgentUser["role"]): Promise<AuthAgentUser>;
+
+export async function requireAuth(userRole?: AuthUser["role"]): Promise<AuthUser> {
   const session = await auth();
 
   if (!session) return redirect("/signin", RedirectType.replace);
