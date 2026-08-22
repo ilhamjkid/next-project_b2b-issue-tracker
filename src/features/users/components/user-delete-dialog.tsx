@@ -13,12 +13,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { StatusAlert } from "@/components/shared/status-alert";
+import { SetUserActiveDialog, UserActiveDialog } from "@/features/users/types";
 import { handleDeleteUser } from "@/features/users/actions";
-
-type ActiveDialog =
-  | { type?: undefined; id?: undefined }
-  | { type: "CREATE"; id?: undefined }
-  | { type: "UPDATE" | "DELETE"; id: string };
 
 export function UserDeleteDialog({
   activeDialog,
@@ -27,8 +23,8 @@ export function UserDeleteDialog({
   userEmail,
   button,
 }: {
-  activeDialog: ActiveDialog;
-  setActiveDialog: (newActiveDialog: ActiveDialog) => void;
+  activeDialog: UserActiveDialog;
+  setActiveDialog: SetUserActiveDialog;
   userId: string;
   userEmail: string;
   button: React.ReactElement;

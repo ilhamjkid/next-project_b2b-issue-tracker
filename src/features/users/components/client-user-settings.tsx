@@ -2,11 +2,12 @@
 
 import * as React from "react";
 import { UserSettingsForm } from "@/features/users/components/user-settings-form";
+import { UserEntity } from "@/features/users/types";
 
 export function ClientUserSettings({
   user,
 }: {
-  user: { id: string; name: string; email: string; role: "CLIENT" | "AGENT" };
+  user: Omit<UserEntity, "password_hash" | "created_at">;
 }) {
   const [formKey, setFormKey] = React.useState<0 | 1>(0);
 

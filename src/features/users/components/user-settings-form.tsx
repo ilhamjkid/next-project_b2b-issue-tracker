@@ -6,6 +6,7 @@ import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { StatusAlert } from "@/components/shared/status-alert";
+import { UserEntity } from "@/features/users/types";
 import { handleUpdateUser } from "@/features/users/actions";
 
 export function UserSettingsForm({
@@ -14,12 +15,7 @@ export function UserSettingsForm({
   className,
   ...props
 }: {
-  user: {
-    id: string;
-    name: string;
-    email: string;
-    role: "CLIENT" | "AGENT";
-  };
+  user: Omit<UserEntity, "password_hash" | "created_at">;
   onResetFormState: () => void;
 } & React.ComponentProps<"form">) {
   const [state, formAction, isPending] = React.useActionState(

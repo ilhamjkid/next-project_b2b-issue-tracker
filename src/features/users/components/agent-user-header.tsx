@@ -4,14 +4,10 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { DashboardHeader } from "@/components/shared/dashboard-header";
 import { UserFormDialog } from "@/features/users/components/user-form-dialog";
+import { UserActiveDialog, UserEntity } from "@/features/users/types";
 
-type ActiveDialog =
-  | { type?: undefined; id?: undefined }
-  | { type: "CREATE"; id?: undefined }
-  | { type: "UPDATE" | "DELETE"; id: string };
-
-export function AgentUserHeader({ userRole }: { userRole: "CLIENT" | "AGENT" }) {
-  const [activeDialog, setActiveDialog] = React.useState<ActiveDialog>({
+export function AgentUserHeader({ userRole }: { userRole: UserEntity["role"] }) {
+  const [activeDialog, setActiveDialog] = React.useState<UserActiveDialog>({
     type: undefined,
     id: undefined,
   });

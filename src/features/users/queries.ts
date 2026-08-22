@@ -1,47 +1,22 @@
-import postgres from "postgres";
+import {
+  CreateUserInputOptions,
+  UpdateUserInputOptions,
+  UserOutputFields,
+  UserOutputOptions,
+  UserQueryResult,
+} from "@/features/users/types";
+import { getOutputFieldsQuery, isPostgresError } from "@/lib/db/utils";
 import { sql } from "@/lib/db/client";
 
-type User = {
-  id: string;
-  name: string;
-  email: string;
-  password_hash: string;
-  role: "CLIENT" | "AGENT";
-  created_at: string;
-};
-type CreateInputOptions = Omit<User, "id" | "role" | "created_at"> & Partial<Pick<User, "role">>;
-type UpdateInputOptions = Partial<Omit<User, "id" | "created_at">>;
-type OutputOptions =
-  | "ALL_FIELDS"
-  | ({ id: true } & Partial<Record<Exclude<keyof User, "id">, boolean>>);
-type OutputFields<TOutputOptions> = TOutputOptions extends "ALL_FIELDS"
-  ? User
-  : {
-      [Key in keyof User as Key extends keyof TOutputOptions
-        ? TOutputOptions[Key] extends true
-          ? Key
-          : never
-        : never]: User[Key];
-    };
-type Result<OutputData extends OutputFields<OutputOptions> | OutputFields<OutputOptions>[]> =
-  Promise<
-    | {
-        success: true;
-        data: OutputData;
-      }
-    | {
-        success: false;
-        message?: string;
-      }
-  >;
-
 export async function getUsers<
-  const TOutputOptions extends OutputOptions = OutputOptions,
->(options: { output: TOutputOptions }): Result<OutputFields<TOutputOptions>[]> {
+  const TUserOutputOptions extends UserOutputOptions = UserOutputOptions,
+>(options: {
+  output: TUserOutputOptions;
+}): UserQueryResult<UserOutputFields<TUserOutputOptions>[]> {
   try {
     const outputFieldsQuery = getOutputFieldsQuery(options.output);
 
-    const users = await sql<OutputFields<TOutputOptions>[]>`
+    const users = await sql<UserOutputFields<TUserOutputOptions>[]>`
       SELECT ${outputFieldsQuery} FROM users
       ORDER BY created_at DESC
     `;
@@ -52,12 +27,34 @@ export async function getUsers<
   }
 }
 
-export async function createUser<
-  const TOutputOptions extends OutputOptions = OutputOptions,
+export async function getUserByEmail<
+  const TUserOutputOptions extends UserOutputOptions = UserOutputOptions,
 >(options: {
-  input: CreateInputOptions;
-  output: TOutputOptions;
-}): Result<OutputFields<TOutputOptions>> {
+  userEmail: string;
+  output: TUserOutputOptions;
+}): UserQueryResult<UserOutputFields<TUserOutputOptions>> {
+  try {
+    const outputFieldsQuery = getOutputFieldsQuery(options.output);
+
+    const [user] = await sql<UserOutputFields<TUserOutputOptions>[]>`
+      SELECT ${outputFieldsQuery} FROM users
+      WHERE email = ${options.userEmail}
+    `;
+    if (!user) return { success: false, message: "User data not found." };
+
+    return { success: true, data: user };
+  } catch (error) {
+    console.error("[DATABASE] Query error.\n", error);
+    return { success: false };
+  }
+}
+
+export async function createUser<
+  const TUserOutputOptions extends UserOutputOptions = UserOutputOptions,
+>(options: {
+  input: CreateUserInputOptions;
+  output: TUserOutputOptions;
+}): UserQueryResult<UserOutputFields<TUserOutputOptions>> {
   try {
     const inputData = Object.fromEntries(
       Object.entries(options.input).filter(([, value]) => value !== undefined),
@@ -65,7 +62,7 @@ export async function createUser<
 
     const outputFieldsQuery = getOutputFieldsQuery(options.output);
 
-    const [user] = await sql<OutputFields<TOutputOptions>[]>`
+    const [user] = await sql<UserOutputFields<TUserOutputOptions>[]>`
       INSERT INTO users ${sql(inputData)}
       RETURNING ${outputFieldsQuery}
     `;
@@ -83,12 +80,12 @@ export async function createUser<
 }
 
 export async function updateUserById<
-  const TOutputOptions extends OutputOptions = OutputOptions,
+  const TUserOutputOptions extends UserOutputOptions = UserOutputOptions,
 >(options: {
   userId: string;
-  input: UpdateInputOptions;
-  output: TOutputOptions;
-}): Result<OutputFields<TOutputOptions>> {
+  input: UpdateUserInputOptions;
+  output: TUserOutputOptions;
+}): UserQueryResult<UserOutputFields<TUserOutputOptions>> {
   try {
     const inputData = Object.fromEntries(
       Object.entries(options.input).filter(([, value]) => value !== undefined),
@@ -99,7 +96,7 @@ export async function updateUserById<
 
     const outputFieldsQuery = getOutputFieldsQuery(options.output);
 
-    const [user] = await sql<OutputFields<TOutputOptions>[]>`
+    const [user] = await sql<UserOutputFields<TUserOutputOptions>[]>`
       UPDATE users SET ${sql(inputData)}
       WHERE id = ${options.userId}
       RETURNING ${outputFieldsQuery}
@@ -117,7 +114,7 @@ export async function updateUserById<
   }
 }
 
-export async function deleteUserById(options: { userId: string }): Result<{ id: string }> {
+export async function deleteUserById(options: { userId: string }): UserQueryResult<{ id: string }> {
   try {
     const [user] = await sql<{ id: string }[]>`
       DELETE FROM users WHERE id = ${options.userId}
@@ -130,20 +127,4 @@ export async function deleteUserById(options: { userId: string }): Result<{ id: 
     console.error("[DATABASE] Query error.\n", error);
     return { success: false };
   }
-}
-
-function getOutputFieldsQuery(output: OutputOptions) {
-  if (output === "ALL_FIELDS") return sql`*`;
-
-  const outputFields: string[] = [];
-  Object.entries(output).forEach(([fieldName, isInclude]) => {
-    if (isInclude) outputFields.push(fieldName);
-  });
-  return sql(outputFields);
-}
-
-function isPostgresError(error: unknown): error is postgres.PostgresError {
-  return (
-    typeof error === "object" && error !== null && "code" in error && typeof error.code === "string"
-  );
 }

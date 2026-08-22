@@ -1,7 +1,7 @@
 import NextAuth, { AuthError } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { signinFormSchema } from "@/features/auth/schemas";
-import { getSingleUserByEmail } from "@/features/auth/queries";
+import { getUserByEmail } from "@/features/users/queries";
 import { comparePassword } from "@/lib/password";
 
 export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
@@ -21,7 +21,7 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
         const validatedFieldsResult = signinFormSchema.safeParse(credentials);
         if (!validatedFieldsResult.success) return null;
 
-        const userResult = await getSingleUserByEmail({
+        const userResult = await getUserByEmail({
           userEmail: validatedFieldsResult.data.email,
           output: "ALL_FIELDS",
         });

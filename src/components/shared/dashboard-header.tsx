@@ -1,13 +1,14 @@
 import * as React from "react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
+import { UserEntity } from "@/features/users/types";
 
 export function DashboardHeader({
   role,
   title,
   children,
 }: {
-  role: "CLIENT" | "AGENT";
+  role: UserEntity["role"];
   title: string;
   children?: React.ReactNode;
 }) {

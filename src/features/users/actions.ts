@@ -1,32 +1,14 @@
 "use server";
 
-import * as z from "zod";
 import { revalidatePath } from "next/cache";
 import { redirect, RedirectType } from "next/navigation";
+import { UserFormState } from "@/features/users/types";
 import { createUserFormSchema, updateUserFormSchema } from "@/features/users/schemas";
 import { createUser, updateUserById, deleteUserById } from "@/features/users/queries";
 import { requireAuth } from "@/lib/access";
-import { signOut, unstable_update } from "@/lib/auth";
+import { getFieldErrors } from "@/lib/zod";
 import { hashPassword } from "@/lib/password";
-
-type UserFormState =
-  | {
-      success: boolean;
-      message?: string;
-      values?: {
-        name?: string;
-        email?: string;
-        role?: "CLIENT" | "AGENT";
-      };
-      errors?: {
-        name?: string[];
-        email?: string[];
-        role?: string[];
-        password?: string[];
-        confirm?: string[];
-      };
-    }
-  | undefined;
+import { signOut, unstable_update } from "@/lib/auth";
 
 const ERROR_MESSAGES = {
   SERVER_ERROR: "An error occurred on our server.",
@@ -53,7 +35,7 @@ export async function handleCreateUser(
     return {
       success: false,
       message: ERROR_MESSAGES.VALIDATION_FAILED,
-      errors: z.flattenError(validatedFieldsResult.error).fieldErrors,
+      errors: getFieldErrors(validatedFieldsResult.error),
       ...(values ? { values } : {}),
     };
   }
@@ -118,7 +100,7 @@ export async function handleUpdateUser(
     return {
       success: false,
       message: ERROR_MESSAGES.VALIDATION_FAILED,
-      errors: z.flattenError(validatedFieldsResult.error).fieldErrors,
+      errors: getFieldErrors(validatedFieldsResult.error),
       ...(values ? { values } : {}),
     };
   }

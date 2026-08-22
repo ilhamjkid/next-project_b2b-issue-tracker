@@ -1,6 +1,7 @@
 import * as z from "zod";
+import { preprocessAll } from "@/lib/zod";
 
-const baseUserFormSchema = z.object({
+export const baseUserFormSchema = z.object({
   name: z
     .string("Name is required and must be valid text.")
     .min(2, "Name must be at least 2 characters.")
@@ -31,19 +32,6 @@ export const updateUserFormSchema = preprocessAll(
   path: ["confirm"],
 });
 
-function preprocessAll<TObjectSchema extends z.ZodObject>(
-  objectSchema: TObjectSchema,
-  preprocessFn: (val: unknown) => unknown | undefined,
-) {
-  return z.object({
-    ...Object.fromEntries(
-      Object.entries(objectSchema.shape).map(([key, value]) => {
-        return [key, z.preprocess(preprocessFn, value)];
-      }),
-    ),
-  }) as TObjectSchema;
-}
-
-function emptyToUndefined(val: unknown): unknown | undefined {
+function emptyToUndefined(val: unknown): unknown {
   return val === null || val === "" ? undefined : val;
 }
