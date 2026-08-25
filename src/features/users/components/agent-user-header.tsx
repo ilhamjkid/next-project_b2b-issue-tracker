@@ -13,7 +13,7 @@ export function AgentUserHeader({ userRole }: { userRole: UserEntity["role"] }) 
   });
 
   return (
-    <DashboardHeader role={userRole} title="User Management">
+    <DashboardHeader userRole={userRole} title="User Management">
       {activeDialog.type === "CREATE" ? (
         <UserFormDialog
           activeDialog={activeDialog}

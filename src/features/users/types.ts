@@ -1,7 +1,12 @@
+import type { Dispatch, SetStateAction } from "react";
 import * as z from "zod";
 import { baseUserFormSchema } from "@/features/users/schemas";
-import { BaseOutputOptions, BaseOutputFields, BaseQueryResult } from "@/lib/db/types";
+import { Prettify, RequireAtLeastOne } from "@/lib/types";
+import { ExtractSelection } from "@/lib/db/types";
 
+/**
+ * Represents the core User model as stored exactly inside the database.
+ */
 export type UserEntity = {
   id: string;
   name: string;
@@ -11,34 +16,66 @@ export type UserEntity = {
   created_at: Date;
 };
 
-export type CreateUserInputOptions = Pick<UserEntity, "name" | "email" | "password_hash"> &
-  Partial<Pick<UserEntity, "role">>;
-export type UpdateUserInputOptions = Pick<UserEntity, "name" | "email"> &
-  Partial<Pick<UserEntity, "password_hash" | "role">>;
+/**
+ * A narrowed subset of the User entity containing safe fields for relational queries (JOINs).
+ */
+export type UserJoinedEntity = Pick<UserEntity, "id" | "name" | "email" | "role">;
 
-export type UserOutputOptions = BaseOutputOptions<UserEntity>;
-export type UserOutputFields<TUserOutputOptions extends UserOutputOptions> = BaseOutputFields<
-  UserEntity,
-  TUserOutputOptions
+/**
+ * Selection options configuration when fetching a User as a nested relation (JOIN).
+ */
+export type UserJoinedOptions = RequireAtLeastOne<Prettify<Record<keyof UserJoinedEntity, true>>>;
+
+/**
+ * Selection options configuration for specifying which primary User columns to select.
+ */
+export type UserOutputOptions = RequireAtLeastOne<Prettify<Record<keyof UserEntity, true>>>;
+
+/**
+ * Dynamically resolves the final shape of primary User fields based on the selected output options.
+ */
+export type UserOutputFields<TUserOutputOptions extends UserOutputOptions | "ALL_FIELDS"> =
+  TUserOutputOptions extends "ALL_FIELDS"
+    ? Prettify<UserEntity>
+    : ExtractSelection<Prettify<UserEntity>, TUserOutputOptions>;
+
+/**
+ * Represents the clean payload schema required to create a new user inside the database.
+ */
+export type CreateUserInputOptions = Prettify<
+  Pick<UserEntity, "name" | "email" | "password_hash"> & Partial<Pick<UserEntity, "role">>
 >;
-export type UserQueryResult<
-  TUserOutputFields extends
-    | UserOutputFields<UserOutputOptions>
-    | UserOutputFields<UserOutputOptions>[],
-> = BaseQueryResult<TUserOutputFields>;
 
-type BaseUserFormInput = z.infer<typeof baseUserFormSchema>;
+/**
+ * Represents the clean payload schema required to update an existing user profile.
+ */
+export type UpdateUserInputOptions = Prettify<
+  Pick<UserEntity, "name" | "email"> & Partial<Pick<UserEntity, "password_hash" | "role">>
+>;
+
+/**
+ * The standard response shape returned by User server actions to handle form feedback loops.
+ */
 export type UserFormState =
   | {
       success: boolean;
       message?: string;
-      values?: Partial<Pick<BaseUserFormInput, "name" | "email" | "role">>;
-      errors?: z.core.$ZodFlattenedError<BaseUserFormInput>["fieldErrors"];
+      values?: Prettify<
+        Partial<Pick<z.infer<typeof baseUserFormSchema>, "name" | "email" | "role">>
+      >;
+      errors?: z.core.$ZodFlattenedError<z.infer<typeof baseUserFormSchema>>["fieldErrors"];
     }
   | undefined;
 
+/**
+ * Manages the client-side state machine for opening specific dialog triggers (Create/Update/Delete).
+ */
 export type UserActiveDialog =
   | { type?: undefined; id?: undefined }
   | { type: "CREATE"; id?: undefined }
-  | { type: "UPDATE" | "DELETE"; id: string };
-export type SetUserActiveDialog = (newActiveDialog: UserActiveDialog) => void;
+  | { type: "UPDATE" | "DELETE"; id: UserEntity["id"] };
+
+/**
+ * State dispatcher type for controlling the active user dialog overlay.
+ */
+export type SetUserActiveDialog = Dispatch<SetStateAction<UserActiveDialog>>;

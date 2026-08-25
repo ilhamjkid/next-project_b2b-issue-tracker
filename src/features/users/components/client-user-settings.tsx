@@ -3,11 +3,12 @@
 import * as React from "react";
 import { UserSettingsForm } from "@/features/users/components/user-settings-form";
 import { UserEntity } from "@/features/users/types";
+import { Prettify } from "@/lib/types";
 
 export function ClientUserSettings({
   user,
 }: {
-  user: Omit<UserEntity, "password_hash" | "created_at">;
+  user: Prettify<Pick<UserEntity, "id" | "name" | "email">>;
 }) {
   const [formKey, setFormKey] = React.useState<0 | 1>(0);
 

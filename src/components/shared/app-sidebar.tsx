@@ -4,7 +4,13 @@ import * as React from "react";
 import { clsx } from "clsx";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { CircleUserRoundIcon, LayoutDashboardIcon, UsersIcon, SettingsIcon } from "lucide-react";
+import {
+  CircleUserRoundIcon,
+  LayoutDashboardIcon,
+  UsersIcon,
+  SettingsIcon,
+  LucideIcon,
+} from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -19,8 +25,17 @@ import { Button } from "@/components/ui/button";
 import { ToggleTheme } from "@/components/shared/toggle-theme";
 import { UserEntity } from "@/features/users/types";
 import { handleSignout } from "@/features/auth/actions";
+import { Prettify } from "@/lib/types";
 
-const navMain = {
+const navMain: Record<
+  UserEntity["role"],
+  {
+    title: string;
+    Icon: LucideIcon;
+    url: string;
+    subUrl?: string;
+  }[]
+> = {
   AGENT: [
     { title: "Dashboard", Icon: LayoutDashboardIcon, url: "/agent", subUrl: "/tickets" },
     { title: "Users", Icon: UsersIcon, url: "/agent/users", subUrl: undefined },
@@ -34,7 +49,7 @@ const navMain = {
 export function AppSidebar({
   user,
   ...props
-}: { user: Omit<UserEntity, "password_hash" | "created_at"> } & React.ComponentProps<
+}: { user: Prettify<Pick<UserEntity, "name" | "email" | "role">> } & React.ComponentProps<
   typeof Sidebar
 >) {
   const pathname = usePathname();

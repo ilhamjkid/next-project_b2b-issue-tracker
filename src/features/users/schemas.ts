@@ -1,6 +1,9 @@
 import * as z from "zod";
 import { preprocessAll } from "@/lib/zod";
 
+/**
+ * Baseline validation schema containing all required user credential and profile fields.
+ */
 export const baseUserFormSchema = z.object({
   name: z
     .string("Name is required and must be valid text.")
@@ -19,19 +22,25 @@ export const baseUserFormSchema = z.object({
   confirm: z.string("Confirm password is required."),
 });
 
-export const createUserFormSchema = preprocessAll(baseUserFormSchema, emptyToUndefined).refine(
-  (data) => data.password === data.confirm,
-  { error: "Confirm password does not match.", path: ["confirm"] },
-);
-
-export const updateUserFormSchema = preprocessAll(
-  baseUserFormSchema.partial({ password: true, confirm: true }),
-  emptyToUndefined,
+/**
+ * Validation schema for registering new users.
+ * Automatically sanitizes empty values and strictly enforces password confirmation parity.
+ */
+export const createUserFormSchema = preprocessAll(baseUserFormSchema, (val: unknown): unknown =>
+  val === null || val === "" ? undefined : val,
 ).refine((data) => data.password === data.confirm, {
-  message: "Confirm password does not match.",
+  error: "Confirm password does not match.",
   path: ["confirm"],
 });
 
-function emptyToUndefined(val: unknown): unknown {
-  return val === null || val === "" ? undefined : val;
-}
+/**
+ * Validation schema for modifying existing user data.
+ * Makes security credentials optional while maintaining strict password parity validation if provided.
+ */
+export const updateUserFormSchema = preprocessAll(
+  baseUserFormSchema.partial({ password: true, confirm: true }),
+  (val: unknown): unknown => (val === null || val === "" ? undefined : val),
+).refine((data) => data.password === data.confirm, {
+  error: "Confirm password does not match.",
+  path: ["confirm"],
+});
