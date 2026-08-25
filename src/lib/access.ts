@@ -1,10 +1,11 @@
 import { redirect, RedirectType } from "next/navigation";
 import { UserEntity } from "@/features/users/types";
+import { Prettify } from "@/lib/types";
 import { auth } from "@/lib/auth";
 
-type AuthUser = Omit<UserEntity, "password_hash" | "created_at">;
-type AuthClientUser = Omit<AuthUser, "role"> & { role: "CLIENT" };
-type AuthAgentUser = Omit<AuthUser, "role"> & { role: "AGENT" };
+type AuthUser = Prettify<Pick<UserEntity, "id" | "name" | "email" | "role">>;
+type AuthClientUser = Prettify<Omit<AuthUser, "role"> & { role: "CLIENT" }>;
+type AuthAgentUser = Prettify<Omit<AuthUser, "role"> & { role: "AGENT" }>;
 
 /**
  * Enforces user authentication and returns a general authenticated user object.

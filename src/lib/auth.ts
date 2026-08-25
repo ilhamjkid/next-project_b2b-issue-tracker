@@ -21,10 +21,7 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
         const validatedFieldsResult = signinFormSchema.safeParse(credentials);
         if (!validatedFieldsResult.success) return null;
 
-        const userResult = await getUserByEmail({
-          userEmail: validatedFieldsResult.data.email,
-          output: "ALL_FIELDS",
-        });
+        const userResult = await getUserByEmail(validatedFieldsResult.data.email);
         if (!userResult.success) {
           if (userResult.message) return null;
           throw new AuthError("Internal Server Error");
