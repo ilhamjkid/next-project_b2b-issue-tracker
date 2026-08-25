@@ -4,11 +4,11 @@ import { Separator } from "@/components/ui/separator";
 import { UserEntity } from "@/features/users/types";
 
 export function DashboardHeader({
-  role,
+  userRole,
   title,
   children,
 }: {
-  role: UserEntity["role"];
+  userRole: UserEntity["role"];
   title: string;
   children?: React.ReactNode;
 }) {
@@ -21,7 +21,7 @@ export function DashboardHeader({
       />
       <div className="w-full flex flex-wrap justify-between items-center gap-2 ">
         <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-xl text-info font-semibold">{role}</h2>
+          <h2 className="text-xl text-info font-semibold">{userRole}</h2>
           <h2 className="text-lg font-medium">{title}</h2>
         </div>
         {children}

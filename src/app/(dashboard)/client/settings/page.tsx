@@ -13,9 +13,15 @@ export default async function ClientSettingsPage() {
 
   return (
     <SidebarInset>
-      <DashboardHeader role={user.role} title="Profile Settings" />
+      <DashboardHeader userRole={user.role} title="Profile Settings" />
       <section className="p-4">
-        <ClientUserSettings user={user} />
+        <ClientUserSettings
+          user={{
+            id: user.id,
+            name: user.name,
+            email: user.email,
+          }}
+        />
       </section>
     </SidebarInset>
   );

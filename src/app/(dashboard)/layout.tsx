@@ -15,7 +15,13 @@ export default async function DashboardLayout({ children }: LayoutProps<"/">) {
           } as React.CSSProperties
         }
       >
-        <AppSidebar user={user} />
+        <AppSidebar
+          user={{
+            name: user.name,
+            email: user.email,
+            role: user.role,
+          }}
+        />
         {children}
       </SidebarProvider>
     </TooltipProvider>

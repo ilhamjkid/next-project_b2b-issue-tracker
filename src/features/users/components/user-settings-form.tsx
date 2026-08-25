@@ -1,13 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { cn } from "@/lib/utils";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { StatusAlert } from "@/components/shared/status-alert";
 import { UserEntity } from "@/features/users/types";
 import { handleUpdateUser } from "@/features/users/actions";
+import { Prettify } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 export function UserSettingsForm({
   user,
@@ -15,7 +16,7 @@ export function UserSettingsForm({
   className,
   ...props
 }: {
-  user: Omit<UserEntity, "password_hash" | "created_at">;
+  user: Prettify<Pick<UserEntity, "id" | "name" | "email">>;
   onResetFormState: () => void;
 } & React.ComponentProps<"form">) {
   const [state, formAction, isPending] = React.useActionState(

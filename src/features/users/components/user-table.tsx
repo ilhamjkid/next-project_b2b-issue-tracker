@@ -13,8 +13,13 @@ import { Button } from "@/components/ui/button";
 import { UserFormDialog } from "@/features/users/components/user-form-dialog";
 import { UserDeleteDialog } from "@/features/users/components/user-delete-dialog";
 import { UserActiveDialog, UserEntity } from "@/features/users/types";
+import { Prettify } from "@/lib/types";
 
-export function UserTable({ users }: { users: Omit<UserEntity, "password_hash">[] }) {
+export function UserTable({
+  users,
+}: {
+  users: Prettify<Pick<UserEntity, "id" | "name" | "email" | "role" | "created_at">>[];
+}) {
   const [activeDialog, setActiveDialog] = React.useState<UserActiveDialog>({
     type: undefined,
     id: undefined,
@@ -50,7 +55,11 @@ export function UserTable({ users }: { users: Omit<UserEntity, "password_hash">[
                   setActiveDialog={setActiveDialog}
                   mode="UPDATE"
                   userId={user.id}
-                  defaultValues={user}
+                  defaultValues={{
+                    name: user.name,
+                    email: user.email,
+                    role: user.role,
+                  }}
                   button={
                     <Button size="sm" variant="secondary" className="font-semibold rounded-sm">
                       Update

@@ -17,6 +17,10 @@ const ERROR_MESSAGES = {
   CANNOT_CHANGE_ROLE: "You cannot change your role.",
 } as const;
 
+/**
+ * Server action to register a new user.
+ * Validates fields using Zod, hashes passwords securely, and revalidates the admin users list.
+ */
 export async function handleCreateUser(
   formState: UserFormState,
   formData: FormData,
@@ -31,12 +35,11 @@ export async function handleCreateUser(
     confirm: formData.get("confirm"),
   });
   if (!validatedFieldsResult.success) {
-    const values = getInputValues(formData);
     return {
       success: false,
       message: ERROR_MESSAGES.VALIDATION_FAILED,
+      values: getInputValues(formData),
       errors: getFieldErrors(validatedFieldsResult.error),
-      ...(values ? { values } : {}),
     };
   }
 
@@ -47,21 +50,18 @@ export async function handleCreateUser(
     return {
       success: false,
       message: ERROR_MESSAGES.SERVER_ERROR,
-      values: { name, email, role },
+      values: getInputValues(formData),
     };
   }
 
   const password_hash = passwordHashResult.data;
 
-  const userResult = await createUser({
-    input: { name, email, password_hash, role },
-    output: { id: true },
-  });
+  const userResult = await createUser({ name, email, password_hash, role });
   if (!userResult.success) {
     return {
       success: false,
       message: userResult.message ?? ERROR_MESSAGES.SERVER_ERROR,
-      values: { name, email, role },
+      values: getInputValues(formData),
     };
   }
 
@@ -70,6 +70,10 @@ export async function handleCreateUser(
   return { success: true };
 }
 
+/**
+ * Server action to update user information.
+ * Enforces role access policies, conditionally re-hashes credentials, and updates Auth.js session states dynamically.
+ */
 export async function handleUpdateUser(
   bound: { userId: string },
   formState: UserFormState,
@@ -80,11 +84,10 @@ export async function handleUpdateUser(
   const { userId } = bound;
 
   if (user.role === "CLIENT" && user.id !== userId) {
-    const values = getInputValues(formData);
     return {
       success: false,
       message: ERROR_MESSAGES.ACCESS_DENIED,
-      ...(values ? { values } : {}),
+      values: getInputValues(formData),
     };
   }
 
@@ -96,12 +99,11 @@ export async function handleUpdateUser(
     confirm: formData.get("confirm"),
   });
   if (!validatedFieldsResult.success) {
-    const values = getInputValues(formData);
     return {
       success: false,
       message: ERROR_MESSAGES.VALIDATION_FAILED,
+      values: getInputValues(formData),
       errors: getFieldErrors(validatedFieldsResult.error),
-      ...(values ? { values } : {}),
     };
   }
 
@@ -111,7 +113,7 @@ export async function handleUpdateUser(
     return {
       success: false,
       message: ERROR_MESSAGES.CANNOT_CHANGE_ROLE,
-      values: { name, email, role },
+      values: getInputValues(formData),
     };
   }
 
@@ -123,23 +125,23 @@ export async function handleUpdateUser(
       return {
         success: false,
         message: ERROR_MESSAGES.SERVER_ERROR,
-        values: { name, email, role },
+        values: getInputValues(formData),
       };
     }
 
     password_hash = passwordHashResult.data;
   }
 
-  const userResult = await updateUserById({
+  const userResult = await updateUserById(
     userId,
-    input: { name, email, password_hash, role },
-    output: { id: true, name: true, email: true, role: true },
-  });
+    { name, email, password_hash, role },
+    { id: true, name: true, email: true, role: true },
+  );
   if (!userResult.success) {
     return {
       success: false,
       message: userResult.message ?? ERROR_MESSAGES.SERVER_ERROR,
-      values: { name, email, role },
+      values: getInputValues(formData),
     };
   }
 
@@ -164,12 +166,16 @@ export async function handleUpdateUser(
   return { success: true };
 }
 
+/**
+ * Server action to delete a user profile by ID.
+ * Forces an automatic logout if the authenticated agent triggers self-deletion.
+ */
 export async function handleDeleteUser(bound: { userId: string }): Promise<UserFormState> {
   const user = await requireAuth("AGENT");
 
   const { userId } = bound;
 
-  const userResult = await deleteUserById({ userId });
+  const userResult = await deleteUserById(userId);
   if (!userResult.success) {
     return {
       success: false,
@@ -186,21 +192,14 @@ export async function handleDeleteUser(bound: { userId: string }): Promise<UserF
   return { success: true };
 }
 
-function getInputValues(formData: FormData):
-  | {
-      name?: string;
-      email?: string;
-      role?: "CLIENT" | "AGENT";
-    }
-  | undefined {
+/**
+ * Fallback assistant to filter out and capture safe initial text inputs from submitted FormData.
+ */
+function getInputValues(formData: FormData): NonNullable<UserFormState>["values"] {
   const name = String(formData.get("name") ?? "");
   const email = String(formData.get("email") ?? "");
   const role = String(formData.get("role") ?? "");
-  const values: {
-    name?: string;
-    email?: string;
-    role?: "CLIENT" | "AGENT";
-  } = {
+  const values: NonNullable<UserFormState>["values"] = {
     ...(name ? { name } : {}),
     ...(email ? { email } : {}),
     ...(role === "CLIENT" || role === "AGENT" ? { role } : {}),

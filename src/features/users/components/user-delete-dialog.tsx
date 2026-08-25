@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { StatusAlert } from "@/components/shared/status-alert";
-import { SetUserActiveDialog, UserActiveDialog } from "@/features/users/types";
+import { SetUserActiveDialog, UserActiveDialog, UserEntity } from "@/features/users/types";
 import { handleDeleteUser } from "@/features/users/actions";
 
 export function UserDeleteDialog({
@@ -25,8 +25,8 @@ export function UserDeleteDialog({
 }: {
   activeDialog: UserActiveDialog;
   setActiveDialog: SetUserActiveDialog;
-  userId: string;
-  userEmail: string;
+  userId: UserEntity["id"];
+  userEmail: UserEntity["email"];
   button: React.ReactElement;
 }) {
   const [state, formAction, isPending] = React.useActionState(

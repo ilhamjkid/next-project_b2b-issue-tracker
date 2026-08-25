@@ -26,6 +26,7 @@ import {
 import { StatusAlert } from "@/components/shared/status-alert";
 import { SetUserActiveDialog, UserActiveDialog, UserEntity } from "@/features/users/types";
 import { handleCreateUser, handleUpdateUser } from "@/features/users/actions";
+import { Prettify } from "@/lib/types";
 
 type CreateUserFormDialogProps = {
   activeDialog: UserActiveDialog;
@@ -39,12 +40,15 @@ type UpdateUserFormDialogProps = {
   activeDialog: UserActiveDialog;
   setActiveDialog: SetUserActiveDialog;
   mode: "UPDATE";
-  userId: string;
-  defaultValues: Omit<UserEntity, "password_hash" | "created_at">;
+  userId: UserEntity["id"];
+  defaultValues: Prettify<Pick<UserEntity, "name" | "email" | "role">>;
   button: React.ReactElement;
 };
 
-const roleItems = [
+const roleItems: {
+  label: Capitalize<Lowercase<UserEntity["role"]>>;
+  value: UserEntity["role"];
+}[] = [
   { label: "Client", value: "CLIENT" },
   { label: "Agent", value: "AGENT" },
 ] as const;
