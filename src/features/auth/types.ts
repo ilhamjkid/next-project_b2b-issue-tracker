@@ -1,12 +1,15 @@
 import * as z from "zod";
 import { signinFormSchema } from "@/features/auth/schemas";
+import { Prettify } from "@/lib/types";
 
-type SigninFormInput = z.infer<typeof signinFormSchema>;
+/**
+ * The standard response shape returned by Authentication server actions to handle login form feedback loops.
+ */
 export type SigninFormState =
   | {
       success: boolean;
       message?: string;
-      values?: Partial<Pick<SigninFormInput, "email">>;
-      errors?: z.core.$ZodFlattenedError<SigninFormInput>["fieldErrors"];
+      values?: Prettify<Partial<Pick<z.infer<typeof signinFormSchema>, "email">>>;
+      errors?: z.core.$ZodFlattenedError<z.infer<typeof signinFormSchema>>["fieldErrors"];
     }
   | undefined;
