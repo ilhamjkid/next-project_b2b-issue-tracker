@@ -32,7 +32,7 @@ export async function requireAuth(userRole: AuthAgentUser["role"]): Promise<Auth
  * and Server Components against unauthorized or forbidden role access.
  *
  * How it works under the hood:
- * 1. SESSION CHECK: It fetches the session using `auth()`. If absent, it forces a strict client-side replacement redirect to `/signin`.
+ * 1. SESSION CHECK: It fetches the session using `auth()`. If absent, it triggers a server-side redirect to `/signin`.
  * 2. ROLE PASS-THROUGH: If no specific `userRole` restriction is requested (`undefined`), it directly grants access and yields the general user payload.
  * 3. AUTHORIZATION CHECK: If a role constraint is given, it validates the authenticated user's role. If matched, it typecasts and returns the narrowed user variant.
  * 4. CROSS-REDIRECT LAW: If a cross-role breach occurs, it redirects the intruder back to their respective authorized home directory.
