@@ -34,14 +34,16 @@ export type RequireAtLeastOne<TObject, Keys extends keyof TObject = keyof TObjec
  * Forces VS Code IntelliSense to expand and display all evaluated properties on hover for better DX.
  *
  * How it works under the hood:
- * Uses a recursive conditional type. It checks if TObject is a function (preserving it untouched),
+ * Uses a recursive conditional type. It preserves special built-ins like Date and function signatures untouched,
  * otherwise maps over every key and recursively calls Prettify on nested property values.
  */
-export type Prettify<TObject> = TObject extends object
-  ? TObject extends (...args: unknown[]) => unknown
-    ? TObject
-    : { [Key in keyof TObject]: Prettify<TObject[Key]> }
-  : TObject;
+export type Prettify<TObject> = TObject extends Date
+  ? TObject
+  : TObject extends object
+    ? TObject extends (...args: unknown[]) => unknown
+      ? TObject
+      : { [Key in keyof TObject]: Prettify<TObject[Key]> }
+    : TObject;
 
 /**
  * Result<TData>
