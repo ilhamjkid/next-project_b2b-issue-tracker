@@ -10,22 +10,22 @@ import { getOutputFieldsQuery, isPostgresError } from "@/lib/db/utils";
 import { sql } from "@/lib/db/client";
 
 /**
- * Fetches all user records from the database ordered by registration date.
+ * Fetches all user records from the database ordered by creation date descending.
  * Supports explicit field filtering or defaults to full entity extraction.
  */
-export async function getUsers(): Promise<Result<UserOutputFields<"ALL_FIELDS">[]>>;
 export async function getUsers<
-  const TUserOutputOptions extends UserOutputOptions = UserOutputOptions,
->(output: TUserOutputOptions): Promise<Result<UserOutputFields<TUserOutputOptions>[]>>;
-export async function getUsers<
-  const TUserOutputOptions extends UserOutputOptions = Required<UserOutputOptions>,
->(
-  output?: TUserOutputOptions,
-): Promise<Result<UserOutputFields<TUserOutputOptions | "ALL_FIELDS">[]>> {
+  const TUserOutputOptions extends UserOutputOptions | "ALL_FIELDS" =
+    | UserOutputOptions
+    | "ALL_FIELDS",
+>(options: {
+  output: TUserOutputOptions;
+}): Promise<Result<UserOutputFields<TUserOutputOptions>[]>> {
   try {
-    const outputFieldsQuery = getOutputFieldsQuery(output);
+    const outputFieldsQuery = getOutputFieldsQuery(
+      options.output !== "ALL_FIELDS" ? options.output : undefined,
+    );
 
-    const users = await sql<UserOutputFields<TUserOutputOptions | "ALL_FIELDS">[]>`
+    const users = await sql<UserOutputFields<TUserOutputOptions>[]>`
       SELECT ${outputFieldsQuery} FROM users ORDER BY created_at DESC
     `;
     return { success: true, data: users };
@@ -37,28 +37,23 @@ export async function getUsers<
 
 /**
  * Retrieves a single user record matching the specified unique email address.
- * Employs positional parameters to ensure highly responsive field autocomplete.
+ * Dynamically projects selected columns based on output configuration options.
  */
-export async function getUserByEmail(
-  userEmail: string,
-): Promise<Result<UserOutputFields<"ALL_FIELDS">>>;
 export async function getUserByEmail<
-  const TUserOutputOptions extends UserOutputOptions = UserOutputOptions,
->(
-  userEmail: string,
-  output: TUserOutputOptions,
-): Promise<Result<UserOutputFields<TUserOutputOptions>>>;
-export async function getUserByEmail<
-  const TUserOutputOptions extends UserOutputOptions = UserOutputOptions,
->(
-  userEmail: string,
-  output?: TUserOutputOptions,
-): Promise<Result<UserOutputFields<TUserOutputOptions | "ALL_FIELDS">>> {
+  const TUserOutputOptions extends UserOutputOptions | "ALL_FIELDS" =
+    | UserOutputOptions
+    | "ALL_FIELDS",
+>(options: {
+  userEmail: string;
+  output: TUserOutputOptions;
+}): Promise<Result<UserOutputFields<TUserOutputOptions>>> {
   try {
-    const outputFieldsQuery = getOutputFieldsQuery(output);
+    const outputFieldsQuery = getOutputFieldsQuery(
+      options.output !== "ALL_FIELDS" ? options.output : undefined,
+    );
 
-    const [user] = await sql<UserOutputFields<TUserOutputOptions | "ALL_FIELDS">[]>`
-      SELECT ${outputFieldsQuery} FROM users WHERE email = ${userEmail}
+    const [user] = await sql<UserOutputFields<TUserOutputOptions>[]>`
+      SELECT ${outputFieldsQuery} FROM users WHERE email = ${options.userEmail}
     `;
     if (!user) return { success: false, message: "User data not found." };
 
@@ -73,30 +68,25 @@ export async function getUserByEmail<
  * Inserts a new user record into the database with sanitized non-undefined fields.
  * Gracefully intercepts Postgres code 23505 to prevent duplicate email registration.
  */
-export async function createUser(
-  input: CreateUserInputOptions,
-): Promise<Result<UserOutputFields<"ALL_FIELDS">>>;
 export async function createUser<
-  const TUserOutputOptions extends UserOutputOptions = UserOutputOptions,
->(
-  input: CreateUserInputOptions,
-  output: TUserOutputOptions,
-): Promise<Result<UserOutputFields<TUserOutputOptions>>>;
-export async function createUser<
-  const TUserOutputOptions extends UserOutputOptions = UserOutputOptions,
->(
-  input: CreateUserInputOptions,
-  output?: TUserOutputOptions,
-): Promise<Result<UserOutputFields<TUserOutputOptions | "ALL_FIELDS">>> {
+  const TUserOutputOptions extends UserOutputOptions | "ALL_FIELDS" =
+    | UserOutputOptions
+    | "ALL_FIELDS",
+>(options: {
+  input: CreateUserInputOptions;
+  output: TUserOutputOptions;
+}): Promise<Result<UserOutputFields<TUserOutputOptions>>> {
   try {
-    const inputData = Object.fromEntries(
-      Object.entries(input).filter(([, value]) => value !== undefined),
+    const cleanInput = Object.fromEntries(
+      Object.entries(options.input).filter(([, value]) => value !== undefined),
     );
 
-    const outputFieldsQuery = getOutputFieldsQuery(output);
+    const outputFieldsQuery = getOutputFieldsQuery(
+      options.output !== "ALL_FIELDS" ? options.output : undefined,
+    );
 
-    const [user] = await sql<UserOutputFields<TUserOutputOptions | "ALL_FIELDS">[]>`
-      INSERT INTO users ${sql(inputData)} RETURNING ${outputFieldsQuery}
+    const [user] = await sql<UserOutputFields<TUserOutputOptions>[]>`
+      INSERT INTO users ${sql(cleanInput)} RETURNING ${outputFieldsQuery}
     `;
     if (!user) return { success: false };
 
@@ -115,33 +105,28 @@ export async function createUser<
  * Updates an existing user record matching the target ID using sanitized input fields.
  * Safely prevents duplicate record collisions and handles missing data fallbacks.
  */
-export async function updateUserById(
-  userId: string,
-  input: UpdateUserInputOptions,
-): Promise<Result<UserOutputFields<"ALL_FIELDS">>>;
 export async function updateUserById<
-  const TUserOutputOptions extends UserOutputOptions = UserOutputOptions,
->(
-  userId: string,
-  input: UpdateUserInputOptions,
-  output: TUserOutputOptions,
-): Promise<Result<UserOutputFields<TUserOutputOptions>>>;
-export async function updateUserById<
-  const TUserOutputOptions extends UserOutputOptions = UserOutputOptions,
->(
-  userId: string,
-  input: UpdateUserInputOptions,
-  output?: TUserOutputOptions,
-): Promise<Result<UserOutputFields<TUserOutputOptions | "ALL_FIELDS">>> {
+  const TUserOutputOptions extends UserOutputOptions | "ALL_FIELDS" =
+    | UserOutputOptions
+    | "ALL_FIELDS",
+>(options: {
+  userId: string;
+  input: UpdateUserInputOptions;
+  output: TUserOutputOptions;
+}): Promise<Result<UserOutputFields<TUserOutputOptions>>> {
   try {
-    const inputData = Object.fromEntries(
-      Object.entries(input).filter(([, value]) => value !== undefined),
+    const cleanInput = Object.fromEntries(
+      Object.entries(options.input).filter(([, value]) => value !== undefined),
     );
 
-    const outputFieldsQuery = getOutputFieldsQuery(output);
+    const outputFieldsQuery = getOutputFieldsQuery(
+      options.output !== "ALL_FIELDS" ? options.output : undefined,
+    );
 
-    const [user] = await sql<UserOutputFields<TUserOutputOptions | "ALL_FIELDS">[]>`
-      UPDATE users SET ${sql(inputData)} WHERE id = ${userId} RETURNING ${outputFieldsQuery}
+    const [user] = await sql<UserOutputFields<TUserOutputOptions>[]>`
+      UPDATE users SET ${sql(cleanInput)}
+      WHERE id = ${options.userId}
+      RETURNING ${outputFieldsQuery}
     `;
     if (!user) return { success: false, message: "User data not found." };
 
@@ -160,12 +145,12 @@ export async function updateUserById<
  * Hard deletes a single user record from the database based on the target ID.
  * Returns a narrowed object payload strictly containing the deleted record identifier.
  */
-export async function deleteUserById(
-  userId: string,
-): Promise<Result<Prettify<Pick<UserEntity, "id">>>> {
+export async function deleteUserById(options: {
+  userId: string;
+}): Promise<Result<Prettify<Pick<UserEntity, "id">>>> {
   try {
     const [user] = await sql<Pick<UserEntity, "id">[]>`
-      DELETE FROM users WHERE id = ${userId} RETURNING id
+      DELETE FROM users WHERE id = ${options.userId} RETURNING id
     `;
     if (!user) return { success: false, message: "User data not found." };
 

@@ -19,7 +19,7 @@ const ERROR_MESSAGES = {
 
 /**
  * Server action to register a new user.
- * Validates fields using Zod, hashes passwords securely, and revalidates the admin users list.
+ * Validates fields using Zod, hashes passwords securely, and revalidates the agent users list.
  */
 export async function handleCreateUser(
   formState: UserFormState,
@@ -56,7 +56,10 @@ export async function handleCreateUser(
 
   const password_hash = passwordHashResult.data;
 
-  const userResult = await createUser({ name, email, password_hash, role });
+  const userResult = await createUser({
+    input: { name, email, password_hash, role },
+    output: { id: true },
+  });
   if (!userResult.success) {
     return {
       success: false,
@@ -132,11 +135,11 @@ export async function handleUpdateUser(
     password_hash = passwordHashResult.data;
   }
 
-  const userResult = await updateUserById(
+  const userResult = await updateUserById({
     userId,
-    { name, email, password_hash, role },
-    { id: true, name: true, email: true, role: true },
-  );
+    input: { name, email, password_hash, role },
+    output: { id: true, name: true, email: true, role: true },
+  });
   if (!userResult.success) {
     return {
       success: false,
@@ -175,7 +178,7 @@ export async function handleDeleteUser(bound: { userId: string }): Promise<UserF
 
   const { userId } = bound;
 
-  const userResult = await deleteUserById(userId);
+  const userResult = await deleteUserById({ userId });
   if (!userResult.success) {
     return {
       success: false,
