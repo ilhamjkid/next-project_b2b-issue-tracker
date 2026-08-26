@@ -15,8 +15,8 @@ type SearchOptions = {
 type OutputOptions = RequireAtLeastOne<Record<string, true>> | undefined;
 
 /**
- * Generates a dynamic SQL fragment for precise field matching (e.g., `id = 1 AND status = 'ACTIVE'`).
- * Automatically strips out fields with `undefined` values.
+ * Generates a dynamic SQL fragment for precise field matching (e.g., `id = 1 AND status IS NULL`).
+ * Automatically strips out fields with `undefined` values and formats `null` values using `IS NULL`.
  *
  * @returns A composite `postgres.Sql` fragment chained with the specified logic,
  *          or `undefined` if the clean filter object is empty.
@@ -30,7 +30,11 @@ export function getMatchFilterQuery(matchFilterOptions: MatchFilterOptions) {
   if (isFilterEmpty) return undefined;
 
   return cleanFilter
-    .map(([field, value]) => sql`${sql(field)} = ${value}`)
+    .map(([field, value]) => {
+      if (value === null) {
+        return sql`${sql(field)} IS NULL`;
+      } else return sql`${sql(field)} = ${value}`;
+    })
     .reduce((acc, current) => {
       if (matchFilterOptions.logic === "AND") {
         return sql`${acc} AND ${current}`;
@@ -68,16 +72,18 @@ export function getSearchQuery(searchOptions: SearchOptions) {
  * Maps keys evaluated to `true` into sanitised SQL identifiers.
  *
  * @returns A comma-separated `postgres.Sql` identifier list of selected columns,
- *          or defaults to `*` if output configuration is `undefined`.
+ *          or defaults to `*` if output configuration is `undefined` or contains no enabled fields.
  */
 export function getOutputFieldsQuery(output: OutputOptions) {
   if (output === undefined) return sql`*`;
 
-  return sql(
-    Object.entries(output)
-      .filter(([, isInclude]) => isInclude)
-      .map(([field]) => field),
-  );
+  const outputFields = Object.entries(output)
+    .filter(([, isInclude]) => isInclude)
+    .map(([field]) => field);
+
+  if (outputFields.length === 0) return sql`*`;
+
+  return sql(outputFields);
 }
 
 /**
