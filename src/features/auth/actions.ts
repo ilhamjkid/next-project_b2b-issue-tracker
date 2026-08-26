@@ -36,7 +36,10 @@ export async function handleSignin(
 
   const { email, password } = validatedFieldsResult.data;
 
-  const userResult = await getUserByEmail(email, { role: true });
+  const userResult = await getUserByEmail({
+    userEmail: email,
+    output: { role: true },
+  });
   if (!userResult.success) {
     return {
       success: false,

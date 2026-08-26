@@ -13,11 +13,13 @@ export const metadata: Metadata = {
 export default async function AgentManageUsersPage() {
   const user = await requireAuth("AGENT");
   const userResult = await getUsers({
-    id: true,
-    name: true,
-    email: true,
-    role: true,
-    created_at: true,
+    output: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      created_at: true,
+    },
   });
   if (!userResult.success) {
     throw new Error(userResult.message ?? "Internal Server Error");
