@@ -30,16 +30,18 @@ export type RequireAtLeastOne<TObject, Keys extends keyof TObject = keyof TObjec
 /**
  * Prettify<TObject>
  *
- * Flattens nested intersection types (`A & B`) into a single, cohesive object.
- * This is a visual utility tool designed to vastly improve the developer experience (DX)
- * by forcing VS Code to display the fully evaluated object structure on hover.
+ * Recursively flattens intersection types (`A & B`) and complex mapped types into a clean object structure.
+ * Forces VS Code IntelliSense to expand and display all evaluated properties on hover for better DX.
  *
  * How it works under the hood:
- * The mapped type `{ [Key in keyof TObject]: TObject[Key] }` loops through all properties and re-maps them,
- * while intersecting it with an empty object `& {}` tricks TypeScript into resolving the entire
- * definition immediately instead of leaving it as an un-evaluated intersection expression.
+ * Uses a recursive conditional type. It checks if TObject is a function (preserving it untouched),
+ * otherwise maps over every key and recursively calls Prettify on nested property values.
  */
-export type Prettify<TObject> = { [Key in keyof TObject]: TObject[Key] } & {};
+export type Prettify<TObject> = TObject extends object
+  ? TObject extends (...args: unknown[]) => unknown
+    ? TObject
+    : { [Key in keyof TObject]: Prettify<TObject[Key]> }
+  : TObject;
 
 /**
  * Result<TData>

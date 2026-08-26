@@ -12,7 +12,7 @@ type SearchOptions = {
   keyword: string;
   logic: "AND" | "OR";
 };
-type OutputOptions = RequireAtLeastOne<Record<string, true>> | undefined;
+type OutputOptions = RequireAtLeastOne<Record<string, true>> | "ALL_FIELDS";
 
 /**
  * Generates a dynamic SQL fragment for precise field matching (e.g., `id = 1 AND status IS NULL`).
@@ -72,10 +72,10 @@ export function getSearchQuery(searchOptions: SearchOptions) {
  * Maps keys evaluated to `true` into sanitised SQL identifiers.
  *
  * @returns A comma-separated `postgres.Sql` identifier list of selected columns,
- *          or defaults to `*` if output configuration is `undefined` or contains no enabled fields.
+ *          or defaults to `*` if output configuration is `ALL_FIELDS` or contains no enabled fields.
  */
 export function getOutputFieldsQuery(output: OutputOptions) {
-  if (output === undefined) return sql`*`;
+  if (output === "ALL_FIELDS") return sql`*`;
 
   const outputFields = Object.entries(output)
     .filter(([, isInclude]) => isInclude)
