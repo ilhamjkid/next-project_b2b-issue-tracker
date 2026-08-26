@@ -21,9 +21,7 @@ export async function getUsers<
   output: TUserOutputOptions;
 }): Promise<Result<UserOutputFields<TUserOutputOptions>[]>> {
   try {
-    const outputFieldsQuery = getOutputFieldsQuery(
-      options.output !== "ALL_FIELDS" ? options.output : undefined,
-    );
+    const outputFieldsQuery = getOutputFieldsQuery(options.output);
 
     const users = await sql<UserOutputFields<TUserOutputOptions>[]>`
       SELECT ${outputFieldsQuery} FROM users ORDER BY created_at DESC
@@ -48,9 +46,7 @@ export async function getUserByEmail<
   output: TUserOutputOptions;
 }): Promise<Result<UserOutputFields<TUserOutputOptions>>> {
   try {
-    const outputFieldsQuery = getOutputFieldsQuery(
-      options.output !== "ALL_FIELDS" ? options.output : undefined,
-    );
+    const outputFieldsQuery = getOutputFieldsQuery(options.output);
 
     const [user] = await sql<UserOutputFields<TUserOutputOptions>[]>`
       SELECT ${outputFieldsQuery} FROM users WHERE email = ${options.userEmail}
@@ -81,9 +77,7 @@ export async function createUser<
       Object.entries(options.input).filter(([, value]) => value !== undefined),
     );
 
-    const outputFieldsQuery = getOutputFieldsQuery(
-      options.output !== "ALL_FIELDS" ? options.output : undefined,
-    );
+    const outputFieldsQuery = getOutputFieldsQuery(options.output);
 
     const [user] = await sql<UserOutputFields<TUserOutputOptions>[]>`
       INSERT INTO users ${sql(cleanInput)} RETURNING ${outputFieldsQuery}
@@ -119,9 +113,7 @@ export async function updateUserById<
       Object.entries(options.input).filter(([, value]) => value !== undefined),
     );
 
-    const outputFieldsQuery = getOutputFieldsQuery(
-      options.output !== "ALL_FIELDS" ? options.output : undefined,
-    );
+    const outputFieldsQuery = getOutputFieldsQuery(options.output);
 
     const [user] = await sql<UserOutputFields<TUserOutputOptions>[]>`
       UPDATE users SET ${sql(cleanInput)}
