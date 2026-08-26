@@ -14,9 +14,7 @@ import { sql } from "@/lib/db/client";
  * Supports explicit field filtering or defaults to full entity extraction.
  */
 export async function getUsers<
-  const TUserOutputOptions extends UserOutputOptions | "ALL_FIELDS" =
-    | UserOutputOptions
-    | "ALL_FIELDS",
+  TUserOutputOptions extends UserOutputOptions | "ALL_FIELDS" = UserOutputOptions | "ALL_FIELDS",
 >(options: {
   output: TUserOutputOptions;
 }): Promise<Result<UserOutputFields<TUserOutputOptions>[]>> {
@@ -38,9 +36,7 @@ export async function getUsers<
  * Dynamically projects selected columns based on output configuration options.
  */
 export async function getUserByEmail<
-  const TUserOutputOptions extends UserOutputOptions | "ALL_FIELDS" =
-    | UserOutputOptions
-    | "ALL_FIELDS",
+  TUserOutputOptions extends UserOutputOptions | "ALL_FIELDS" = UserOutputOptions | "ALL_FIELDS",
 >(options: {
   userEmail: string;
   output: TUserOutputOptions;
@@ -65,9 +61,7 @@ export async function getUserByEmail<
  * Gracefully intercepts Postgres code 23505 to prevent duplicate email registration.
  */
 export async function createUser<
-  const TUserOutputOptions extends UserOutputOptions | "ALL_FIELDS" =
-    | UserOutputOptions
-    | "ALL_FIELDS",
+  TUserOutputOptions extends UserOutputOptions | "ALL_FIELDS" = UserOutputOptions | "ALL_FIELDS",
 >(options: {
   input: CreateUserInputOptions;
   output: TUserOutputOptions;
@@ -100,9 +94,7 @@ export async function createUser<
  * Safely prevents duplicate record collisions and handles missing data fallbacks.
  */
 export async function updateUserById<
-  const TUserOutputOptions extends UserOutputOptions | "ALL_FIELDS" =
-    | UserOutputOptions
-    | "ALL_FIELDS",
+  TUserOutputOptions extends UserOutputOptions | "ALL_FIELDS" = UserOutputOptions | "ALL_FIELDS",
 >(options: {
   userId: string;
   input: UpdateUserInputOptions;

@@ -35,9 +35,11 @@ export type UserOutputOptions = Prettify<RequireAtLeastOne<Record<keyof UserEnti
  * Dynamically resolves the final shape of primary User fields based on the selected output options.
  */
 export type UserOutputFields<TUserOutputOptions extends UserOutputOptions | "ALL_FIELDS"> =
-  TUserOutputOptions extends "ALL_FIELDS"
-    ? Prettify<UserEntity>
-    : ExtractSelection<Prettify<UserEntity>, TUserOutputOptions>;
+  Prettify<
+    TUserOutputOptions extends "ALL_FIELDS"
+      ? UserEntity
+      : ExtractSelection<UserEntity, TUserOutputOptions>
+  >;
 
 /**
  * Represents the input options required to insert a new user record into the database.
