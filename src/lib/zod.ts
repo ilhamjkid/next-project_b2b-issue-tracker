@@ -23,7 +23,9 @@ export function preprocessAll<TObjectSchema extends z.ZodObject>(
         return [key, z.preprocess(preprocessFn, value)];
       }),
     ),
-  }) as TObjectSchema;
+  }) as z.ZodObject<{
+    [Key in keyof TObjectSchema["shape"]]: z.ZodPreprocess<TObjectSchema["shape"][Key]>;
+  }>;
 }
 
 /**
