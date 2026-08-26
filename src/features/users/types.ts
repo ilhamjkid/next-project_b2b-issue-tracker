@@ -24,12 +24,12 @@ export type UserJoinedEntity = Pick<UserEntity, "id" | "name" | "email" | "role"
 /**
  * Selection options configuration when fetching a User as a nested relation (JOIN).
  */
-export type UserJoinedOptions = RequireAtLeastOne<Prettify<Record<keyof UserJoinedEntity, true>>>;
+export type UserJoinedOptions = Prettify<RequireAtLeastOne<Record<keyof UserJoinedEntity, true>>>;
 
 /**
  * Selection options configuration for specifying which primary User columns to select.
  */
-export type UserOutputOptions = RequireAtLeastOne<Prettify<Record<keyof UserEntity, true>>>;
+export type UserOutputOptions = Prettify<RequireAtLeastOne<Record<keyof UserEntity, true>>>;
 
 /**
  * Dynamically resolves the final shape of primary User fields based on the selected output options.
@@ -40,7 +40,7 @@ export type UserOutputFields<TUserOutputOptions extends UserOutputOptions | "ALL
     : ExtractSelection<Prettify<UserEntity>, TUserOutputOptions>;
 
 /**
- * Represents the clean payload schema required to create a new user inside the database.
+ * Represents the input options required to insert a new user record into the database.
  */
 export type CreateUserInputOptions = Prettify<
   Pick<UserEntity, "name" | "email" | "password_hash"> & Partial<Pick<UserEntity, "role">>

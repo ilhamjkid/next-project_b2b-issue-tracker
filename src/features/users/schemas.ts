@@ -24,9 +24,9 @@ export const baseUserFormSchema = z.object({
 
 /**
  * Validation schema for registering new users.
- * Automatically sanitizes empty values and strictly enforces password confirmation parity.
+ * Automatically sanitizes empty values, mandates password input, and enforces password confirmation parity.
  */
-export const createUserFormSchema = preprocessAll(baseUserFormSchema, (val: unknown): unknown =>
+export const createUserFormSchema = preprocessAll(baseUserFormSchema, (val) =>
   val === null || val === "" ? undefined : val,
 ).refine((data) => data.password === data.confirm, {
   error: "Confirm password does not match.",
@@ -39,7 +39,7 @@ export const createUserFormSchema = preprocessAll(baseUserFormSchema, (val: unkn
  */
 export const updateUserFormSchema = preprocessAll(
   baseUserFormSchema.partial({ password: true, confirm: true }),
-  (val: unknown): unknown => (val === null || val === "" ? undefined : val),
+  (val) => (val === null || val === "" ? undefined : val),
 ).refine((data) => data.password === data.confirm, {
   error: "Confirm password does not match.",
   path: ["confirm"],
