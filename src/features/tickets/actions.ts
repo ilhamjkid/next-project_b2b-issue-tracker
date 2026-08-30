@@ -2,30 +2,28 @@
 
 import { revalidatePath } from "next/cache";
 import {
+  TicketEntity,
   CreateTicketByClientFormState,
   UpdateTicketByAgentPayload,
-  UpdateTicketByClientFormState,
 } from "@/features/tickets/types";
 import {
   createTicketByClientFormSchema,
   updateTicketByAgentPayloadSchema,
-  updateTicketByClientFormSchema,
 } from "@/features/tickets/schemas";
-import {
-  createTicket,
-  deleteTicketById,
-  getTicket,
-  updateTicketById,
-} from "@/features/tickets/queries";
+import { createTicket, deleteTicketById, updateTicketById } from "@/features/tickets/queries";
 import { requireAuth } from "@/lib/access";
 import { getFieldErrors } from "@/lib/zod";
 
 const ERROR_MESSAGES = {
   SERVER_ERROR: "An error occurred on our server.",
   VALIDATION_FAILED: "The submitted data is invalid.",
-  ACCESS_DENIED: "Access denied.",
 } as const;
 
+/**
+ * Server action to process ticket creation requests submitted by clients.
+ * Enforces `CLIENT` authorization, validates form inputs, creates the database record,
+ * and revalidates the client dashboard route cache.
+ */
 export async function handleCreateTicketByClient(
   formState: CreateTicketByClientFormState,
   formData: FormData,
@@ -41,7 +39,7 @@ export async function handleCreateTicketByClient(
     return {
       success: false,
       message: ERROR_MESSAGES.VALIDATION_FAILED,
-      values: getInputValuesFromHandleTicketByClient(formData, "CREATE"),
+      values: getInputValues(formData),
       errors: getFieldErrors(validatedFieldsResult.error),
     };
   }
@@ -56,7 +54,7 @@ export async function handleCreateTicketByClient(
     return {
       success: false,
       message: ticketCreatedResult.message ?? ERROR_MESSAGES.SERVER_ERROR,
-      values: getInputValuesFromHandleTicketByClient(formData, "CREATE"),
+      values: getInputValues(formData),
     };
   }
 
@@ -65,59 +63,11 @@ export async function handleCreateTicketByClient(
   return { success: true };
 }
 
-export async function handleUpdateTicketByClient(
-  bound: { ticketId: string },
-  formState: UpdateTicketByClientFormState,
-  formData: FormData,
-): Promise<UpdateTicketByClientFormState> {
-  const user = await requireAuth("CLIENT");
-
-  const ticketFoundedResult = await getTicket({
-    where: { id: bound.ticketId, created_by_id: user.id },
-    output: { id: true },
-  });
-  if (!ticketFoundedResult.success) {
-    const isNotFound = ticketFoundedResult.message === "Ticket data not found.";
-    return {
-      success: false,
-      message: isNotFound ? ERROR_MESSAGES.ACCESS_DENIED : ERROR_MESSAGES.SERVER_ERROR,
-      values: getInputValuesFromHandleTicketByClient(formData, "UPDATE"),
-    };
-  }
-
-  const validatedFieldsResult = updateTicketByClientFormSchema.safeParse({
-    title: formData.get("title"),
-    description: formData.get("description"),
-  });
-  if (!validatedFieldsResult.success) {
-    return {
-      success: false,
-      message: ERROR_MESSAGES.VALIDATION_FAILED,
-      values: getInputValuesFromHandleTicketByClient(formData, "UPDATE"),
-      errors: getFieldErrors(validatedFieldsResult.error),
-    };
-  }
-
-  const { title, description } = validatedFieldsResult.data;
-
-  const ticketUpdatedResult = await updateTicketById({
-    ticketId: ticketFoundedResult.data.id,
-    input: { title, description },
-    output: { id: true },
-  });
-  if (!ticketUpdatedResult.success) {
-    return {
-      success: false,
-      message: ticketUpdatedResult.message ?? ERROR_MESSAGES.SERVER_ERROR,
-      values: getInputValuesFromHandleTicketByClient(formData, "UPDATE"),
-    };
-  }
-
-  revalidatePath("/client");
-
-  return { success: true };
-}
-
+/**
+ * Server action to process ticket update requests submitted by agents.
+ * Enforces `AGENT` authorization, validates payload parameters, updates ticket fields,
+ * and revalidates the specific agent ticket detail page cache.
+ */
 export async function handleUpdateTicketByAgent(
   payload: UpdateTicketByAgentPayload,
 ): Promise<{ success: boolean; message?: string }> {
@@ -134,10 +84,10 @@ export async function handleUpdateTicketByAgent(
 
   const { status, priority, assigned_to_id } = validatedPayloadResult.data;
 
-  const ticketUpdatedResult = await updateTicketById({
-    ticketId: payload.ticketId,
-    input: { status, priority, assigned_to_id },
-    output: { id: true },
+  const ticketUpdatedResult = await ticketUpdatedResultHelper(payload, {
+    status,
+    priority,
+    assigned_to_id,
   });
   if (!ticketUpdatedResult.success) {
     return {
@@ -146,11 +96,33 @@ export async function handleUpdateTicketByAgent(
     };
   }
 
-  revalidatePath(`/agent/tickets/${payload.ticketId}`);
+  revalidatePath(`/agent/tickets/${ticketUpdatedResult.data.id}`);
 
   return { success: true };
 }
 
+/**
+ * Helper execution wrapper for `updateTicketById` within agent server actions.
+ */
+async function ticketUpdatedResultHelper(
+  payload: UpdateTicketByAgentPayload,
+  input: {
+    status?: TicketEntity["status"];
+    priority?: TicketEntity["priority"];
+    assigned_to_id?: string;
+  },
+) {
+  return await updateTicketById({
+    ticketId: payload.ticketId,
+    input,
+    output: { id: true },
+  });
+}
+
+/**
+ * Server action to process ticket deletion requests submitted by agents.
+ * Enforces `AGENT` authorization, deletes the ticket by ID, and revalidates the agent dashboard cache.
+ */
 export async function handleDeleteTicketByAgent(payload: {
   ticketId: string;
 }): Promise<{ success: boolean; message?: string }> {
@@ -171,23 +143,20 @@ export async function handleDeleteTicketByAgent(payload: {
   return { success: true };
 }
 
-function getInputValuesFromHandleTicketByClient<
-  const TMode extends "CREATE" | "UPDATE" = "CREATE" | "UPDATE",
->(
-  formData: FormData,
-  mode: TMode,
-):
-  | (TMode extends "CREATE"
-      ? NonNullable<CreateTicketByClientFormState>["values"]
-      : NonNullable<UpdateTicketByClientFormState>["values"])
-  | undefined {
+/**
+ * Helper function to extract and format form input values from `FormData` for preserving user inputs on validation failure.
+ */
+function getInputValues(formData: FormData): NonNullable<CreateTicketByClientFormState>["values"] {
   const title = String(formData.get("title") ?? "");
   const description = String(formData.get("description") ?? "");
   const priority = String(formData.get("priority") ?? "");
-  const priorities = ["LOW", "MEDIUM", "HIGH"];
-  const values = Object.assign(
-    { ...(title ? { title } : {}), ...(description ? { description } : {}) },
-    mode === "CREATE" ? (priorities.includes(priority) ? { priority } : {}) : {},
-  );
+  const values: NonNullable<CreateTicketByClientFormState>["values"] = {
+    ...(title ? { title } : {}),
+    ...(description ? { description } : {}),
+    ...(((priority: string): priority is TicketEntity["priority"] =>
+      ["LOW", "MEDIUM", "HIGH"].includes(priority))(priority)
+      ? { priority }
+      : {}),
+  };
   return Object.keys(values).length > 0 ? values : undefined;
 }
