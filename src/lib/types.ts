@@ -68,3 +68,24 @@ export type Result<TData> =
       success: false;
       message?: string;
     };
+
+/**
+ * UnderscoreToSpace<S, C>
+ *
+ * Replaces underscores (`_`) with spaces in a string literal.
+ * Use the optional "WITH_CAPITALIZE" flag to capitalize every word.
+ *
+ * @example
+ * type Default = UnderscoreToSpace<"user_id">; // "user id"
+ * type TitleCase = UnderscoreToSpace<"first_name_field", "WITH_CAPITALIZE">; // "First Name Field"
+ */
+export type UnderscoreToSpace<
+  S extends string,
+  C extends "WITH_CAPITALIZE" | undefined = undefined,
+> = S extends `${infer T}_${infer U}`
+  ? C extends "WITH_CAPITALIZE"
+    ? `${Capitalize<T>} ${UnderscoreToSpace<U, C>}`
+    : `${T} ${UnderscoreToSpace<U>}`
+  : C extends "WITH_CAPITALIZE"
+    ? Capitalize<S>
+    : S;
