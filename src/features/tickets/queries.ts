@@ -55,6 +55,10 @@ export async function getTickets<
 
     return { success: true, data: tickets };
   } catch (error) {
+    if (isPostgresError(error) && error.code === "22P02") {
+      return { success: true, data: [] };
+    }
+
     console.error("[DATABASE] Query error.\n", error);
     return { success: false };
   }
@@ -97,6 +101,10 @@ export async function getTicket<
 
     return { success: true, data: ticket };
   } catch (error) {
+    if (isPostgresError(error) && error.code === "22P02") {
+      return { success: false, message: "Ticket data not found." };
+    }
+
     console.error("[DATABASE] Query error.\n", error);
     return { success: false };
   }
@@ -128,8 +136,14 @@ export async function createTicket<
 
     return { success: true, data: ticket };
   } catch (error) {
-    if (isPostgresError(error) && error.code === "23503") {
-      return { success: false, message: "Invalid reference data provided." };
+    if (isPostgresError(error)) {
+      if (error.code === "22P02") {
+        return { success: false, message: "Ticket data not found." };
+      }
+
+      if (error.code === "23503") {
+        return { success: false, message: "Invalid reference data provided." };
+      }
     }
 
     console.error("[DATABASE] Query error.\n", error);
@@ -171,8 +185,14 @@ export async function updateTicketById<
 
     return { success: true, data: ticket };
   } catch (error) {
-    if (isPostgresError(error) && error.code === "23503") {
-      return { success: false, message: "Invalid reference data provided." };
+    if (isPostgresError(error)) {
+      if (error.code === "22P02") {
+        return { success: false, message: "Ticket data not found." };
+      }
+
+      if (error.code === "23503") {
+        return { success: false, message: "Invalid reference data provided." };
+      }
     }
 
     console.error("[DATABASE] Query error.\n", error);
@@ -195,6 +215,10 @@ export async function deleteTicketById(options: {
 
     return { success: true, data: ticket };
   } catch (error) {
+    if (isPostgresError(error) && error.code === "22P02") {
+      return { success: false, message: "Ticket data not found." };
+    }
+
     console.error("[DATABASE] Query error.\n", error);
     return { success: false };
   }

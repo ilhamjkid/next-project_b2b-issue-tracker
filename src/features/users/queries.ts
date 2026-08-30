@@ -116,8 +116,14 @@ export async function updateUserById<
 
     return { success: true, data: user };
   } catch (error) {
-    if (isPostgresError(error) && error.code === "23505") {
-      return { success: false, message: "This email is already in use." };
+    if (isPostgresError(error)) {
+      if (error.code === "22P02") {
+        return { success: false, message: "User data not found." };
+      }
+
+      if (error.code === "23505") {
+        return { success: false, message: "This email is already in use." };
+      }
     }
 
     console.error("[DATABASE] Query error.\n", error);
@@ -140,6 +146,10 @@ export async function deleteUserById(options: {
 
     return { success: true, data: user };
   } catch (error) {
+    if (isPostgresError(error) && error.code === "22P02") {
+      return { success: false, message: "User data not found." };
+    }
+
     console.error("[DATABASE] Query error.\n", error);
     return { success: false };
   }
