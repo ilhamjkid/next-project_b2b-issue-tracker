@@ -86,6 +86,14 @@ export type TicketSearchOptions = {
 };
 
 /**
+ * Pagination options to slice query results using page and limit.
+ */
+export type TicketPaginationOptions = {
+  page: number;
+  limit: number;
+};
+
+/**
  * Payload parameters required for creating a new ticket in the database.
  */
 export type CreateTicketInputOptions = Prettify<

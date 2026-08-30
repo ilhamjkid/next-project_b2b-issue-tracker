@@ -1,24 +1,25 @@
 import {
-  CreateTicketInputOptions,
   TicketFilterOptions,
   TicketSearchOptions,
-  TicketFinalFields,
-  TicketJoinOptions,
+  TicketPaginationOptions,
   TicketOutputOptions,
+  TicketJoinOptions,
+  TicketFinalFields,
+  CreateTicketInputOptions,
   UpdateTicketInputOptions,
 } from "@/features/tickets/types";
 import { UserJoinedEntity } from "@/features/users/types";
 import {
   getMatchFilterQuery,
-  getOutputFieldsQuery,
   getSearchQuery,
+  getOutputFieldsQuery,
   isPostgresError,
 } from "@/lib/db/utils";
 import { sql } from "@/lib/db/client";
 import { Result } from "@/lib/types";
 
 /**
- * Retrieves a list of ticket records matching optional filter and search criteria.
+ * Retrieves a paginated list of ticket records matching optional filter and search criteria.
  * Supports dynamic output field selection and relation JOINs (`client` and `agent`).
  */
 export async function getTickets<
@@ -31,7 +32,13 @@ export async function getTickets<
   join: TTicketJoinOptions;
   filter?: TicketFilterOptions;
   search?: TicketSearchOptions;
-}): Promise<Result<TicketFinalFields<TTicketOutputOptions, TTicketJoinOptions>[]>> {
+  pagination?: TicketPaginationOptions;
+}): Promise<
+  Result<{
+    data: TicketFinalFields<TTicketOutputOptions, TTicketJoinOptions>[];
+    total: number;
+  }>
+> {
   try {
     const outputFieldsQuery =
       options.output === "ALL_FIELDS"
@@ -47,18 +54,128 @@ export async function getTickets<
 
     const whereQuery = getTicketWhereQuery(options.filter, options.search);
 
-    const tickets = await sql<TicketFinalFields<TTicketOutputOptions, TTicketJoinOptions>[]>`
+    const page = Math.max(1, options.pagination?.page ?? 1);
+    const limit = Math.max(1, options.pagination?.limit ?? 10);
+    const offset = (page - 1) * limit;
+
+    const ticketsQuery = sql<TicketFinalFields<TTicketOutputOptions, TTicketJoinOptions>[]>`
       SELECT ${outputFieldsQuery} ${clientQuery.select} ${agentQuery.select}
       FROM tickets t ${clientQuery.join} ${agentQuery.join}
       ${whereQuery} ORDER BY t.created_at DESC
+      LIMIT ${limit} OFFSET ${offset}
     `;
 
-    return { success: true, data: tickets };
+    const countQuery = sql<[{ count: string }]>`
+      SELECT COUNT (id) as count
+      FROM tickets ${whereQuery}
+    `;
+
+    const [tickets, [{ count }]] = await Promise.all([ticketsQuery, countQuery]);
+
+    return { success: true, data: { data: tickets, total: parseInt(count, 10) } };
   } catch (error) {
     if (isPostgresError(error) && error.code === "22P02") {
-      return { success: true, data: [] };
+      return { success: true, data: { data: [], total: 0 } };
     }
 
+    console.error("[DATABASE] Query error.\n", error);
+    return { success: false };
+  }
+}
+
+/**
+ * Retrieves aggregate ticket statistics (total, open, and resolved) for a specific client user.
+ * This query runs independently of table filters to power top-level summary cards.
+ */
+export async function getTicketStatsByClient(options: { clientUserId: string }): Promise<
+  Result<{
+    totalTickets: number;
+    openTickets: number;
+    resolvedTickets: number;
+  }>
+> {
+  try {
+    const [stats] = await sql<
+      [
+        {
+          total_tickets: string;
+          open_tickets: string;
+          resolved_tickets: string;
+        },
+      ]
+    >`
+      SELECT
+        COUNT(id) AS total_tickets,
+        COUNT(id) FILTER (WHERE status = 'OPEN') AS open_tickets,
+        COUNT(id) FILTER (WHERE status = 'RESOLVED') AS resolved_tickets
+      FROM tickets
+      WHERE created_by_id = ${options.clientUserId}
+    `;
+
+    if (!stats) return { success: false, message: "Ticket data not found." };
+
+    return {
+      success: true,
+      data: {
+        totalTickets: parseInt(stats.total_tickets, 10) || 0,
+        openTickets: parseInt(stats.open_tickets, 10) || 0,
+        resolvedTickets: parseInt(stats.resolved_tickets, 10) || 0,
+      },
+    };
+  } catch (error) {
+    if (isPostgresError(error) && error.code === "22P02") {
+      return { success: false, message: "Ticket data not found." };
+    }
+
+    console.error("[DATABASE] Query error.\n", error);
+    return { success: false };
+  }
+}
+
+/**
+ * Retrieves aggregate ticket statistics (unassigned, in-progress, and resolved today) for agents.
+ * Calculates today's resolved tickets using the specified timezone to accurately group by date.
+ */
+export async function getTicketStatsByAgent(): Promise<
+  Result<{
+    unassignedTickets: number;
+    inProgressTickets: number;
+    resolvedTodayTickets: number;
+  }>
+> {
+  try {
+    const timeZone = "Asia/Jakarta";
+
+    const [stats] = await sql<
+      [
+        {
+          unassigned_tickets: string;
+          in_progress_tickets: string;
+          resolved_today_tickets: string;
+        },
+      ]
+    >`
+      SELECT
+        COUNT(id) FILTER (WHERE assigned_to_id IS NULL) AS unassigned_tickets,
+        COUNT(id) FILTER (WHERE status = 'IN_PROGRESS') AS in_progress_tickets,
+        COUNT(id) FILTER (
+          WHERE status = 'RESOLVED' AND
+          (updated_at AT TIME ZONE ${timeZone})::date =
+          (CURRENT_TIMESTAMP AT TIME ZONE ${timeZone})::date
+        ) AS resolved_today_tickets
+      FROM tickets
+    `;
+    if (!stats) return { success: false };
+
+    return {
+      success: true,
+      data: {
+        unassignedTickets: parseInt(stats.unassigned_tickets, 10) || 0,
+        inProgressTickets: parseInt(stats.in_progress_tickets, 10) || 0,
+        resolvedTodayTickets: parseInt(stats.resolved_today_tickets, 10) || 0,
+      },
+    };
+  } catch (error) {
     console.error("[DATABASE] Query error.\n", error);
     return { success: false };
   }
