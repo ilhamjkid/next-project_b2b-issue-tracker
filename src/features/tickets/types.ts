@@ -1,12 +1,12 @@
 import * as z from "zod";
-import {
-  createTicketByClientFormSchema,
-  updateTicketByClientFormSchema,
-} from "@/features/tickets/schemas";
-import { UserEntity } from "@/features/users/types";
-import { BaseOutputFields, BaseOutputOptions, BaseQueryResult } from "@/lib/db/types";
-import { RequireAtLeastOne } from "@/lib/types";
+import { createTicketByClientFormSchema } from "@/features/tickets/schemas";
+import { UserJoinedEntity, UserJoinedOptions } from "@/features/users/types";
+import { CleanEmpty, ExtractSelection } from "@/lib/db/types";
+import { RequireAtLeastOne, Prettify } from "@/lib/types";
 
+/**
+ * Represents the complete raw entity structure of a ticket stored in the database.
+ */
 export type TicketEntity = {
   id: string;
   title: string;
@@ -14,82 +14,124 @@ export type TicketEntity = {
   status: "OPEN" | "IN_PROGRESS" | "RESOLVED" | "CLOSED";
   priority: "LOW" | "MEDIUM" | "HIGH";
   created_by_id: string;
-  assigned_to_id: string;
+  assigned_to_id: string | null;
   created_at: Date;
   updated_at: Date;
 };
 
-export type TicketWithUsers = Omit<
-  TicketEntity,
-  "created_by_id" | "assigned_to_id" | "updated_at"
-> & {
-  client: Pick<UserEntity, "id" | "name" | "email">;
-  agent: Pick<UserEntity, "id" | "name" | "email"> | null;
+/**
+ * Defines joined user entities attached to a ticket.
+ * Maps 'client' (creator) and 'agent' (assigned staff) with their respective roles.
+ */
+export type TicketJoinUserEntity = Prettify<{
+  client: Omit<UserJoinedEntity, "role"> & { role: "CLIENT" };
+  agent: (Omit<UserJoinedEntity, "role"> & { role: "AGENT" }) | null;
+}>;
+
+/**
+ * Field selection options for database output queries on the ticket entity.
+ * Requires at least one valid property key of `TicketEntity` set to `true`.
+ */
+export type TicketOutputOptions = Prettify<RequireAtLeastOne<Record<keyof TicketEntity, true>>>;
+
+/**
+ * Selection options for performing JOIN operations with user relations ('client' and 'agent').
+ * Accepts specific field maps, `"ALL_FIELDS"`, or `null` to disable joins.
+ */
+export type TicketJoinOptions = Prettify<RequireAtLeastOne<{
+  client: UserJoinedOptions | "ALL_FIELDS";
+  agent: UserJoinedOptions | "ALL_FIELDS";
+}> | null>;
+
+/**
+ * Evaluates dynamic selection options (`TTicketOutputOptions` and `TTicketJoinOptions`)
+ * to resolve the final strongly-typed shape of ticket query results.
+ */
+export type TicketFinalFields<
+  TTicketOutputOptions extends TicketOutputOptions | "ALL_FIELDS",
+  TTicketJoinOptions extends TicketJoinOptions | "ALL_FIELDS",
+> = Prettify<
+  (TTicketOutputOptions extends "ALL_FIELDS"
+    ? TicketEntity
+    : ExtractSelection<TicketEntity, TTicketOutputOptions>) &
+    (TTicketJoinOptions extends null
+      ? Record<never, never>
+      : TTicketJoinOptions extends "ALL_FIELDS"
+        ? TicketJoinUserEntity
+        : CleanEmpty<{
+            [Key in keyof TTicketJoinOptions]: Key extends keyof TicketJoinUserEntity
+              ? TTicketJoinOptions[Key] extends "ALL_FIELDS"
+                ? TicketJoinUserEntity[Key]
+                : ExtractSelection<TicketJoinUserEntity[Key], TTicketJoinOptions[Key]>
+              : never;
+          }>)
+>;
+
+/**
+ * Options for filtering ticket queries by specific field matches.
+ * Enforces providing at least one filter criterion.
+ */
+export type TicketFilterOptions = Prettify<
+  RequireAtLeastOne<
+    Record<"id" | "status" | "priority" | "created_by_id" | "assigned_to_id", string | null>
+  >
+>;
+
+/**
+ * Configures text search parameters across specified ticket text fields.
+ */
+export type TicketSearchOptions = {
+  fields: ("title" | "description")[];
+  keyword: string;
 };
 
-export type GetTicketsFilterOptions =
-  | (Partial<Pick<TicketEntity, "status" | "priority" | "created_by_id" | "assigned_to_id">> & {
-      search?: string | undefined;
-    })
-  | undefined;
-
-export type GetTicketWhereOptions = RequireAtLeastOne<
-  Pick<TicketEntity, "id" | "created_by_id" | "assigned_to_id">
+/**
+ * Payload parameters required for creating a new ticket in the database.
+ */
+export type CreateTicketInputOptions = Prettify<
+  Pick<TicketEntity, "title" | "description" | "created_by_id"> &
+    Partial<Pick<TicketEntity, "status" | "priority" | "assigned_to_id">>
 >;
 
-export type CreateTicketInputOptions = Pick<
-  TicketEntity,
-  "title" | "description" | "created_by_id"
-> &
-  Partial<Pick<TicketEntity, "status" | "priority" | "assigned_to_id">>;
-export type UpdateTicketInputOptions = Partial<
-  Omit<TicketEntity, "id" | "created_by_id" | "created_at" | "updated_at">
+/**
+ * Payload parameters permitted for updating an existing ticket in the database.
+ */
+export type UpdateTicketInputOptions = Prettify<
+  Partial<
+    Pick<
+      TicketEntity,
+      "title" | "description" | "status" | "priority" | "created_by_id" | "assigned_to_id"
+    >
+  >
 >;
 
-export type TicketOutputOptions = BaseOutputOptions<TicketEntity>;
-export type TicketOutputFields<TTicketOutputOptions extends TicketOutputOptions> = BaseOutputFields<
-  TicketEntity,
-  TTicketOutputOptions
->;
-export type TicketQueryResult<
-  TTicketOutputFields extends
-    | TicketOutputFields<TicketOutputOptions>
-    | TicketOutputFields<TicketOutputOptions>[],
-> = BaseQueryResult<TTicketOutputFields>;
-
-type BaseTicketFormState<TValues = undefined, TErrors = undefined> =
+/**
+ * State object returned by client-side form actions during ticket creation.
+ * Contains execution outcome status, form values, messages, or validation errors.
+ */
+export type CreateTicketByClientFormState =
   | {
       success: boolean;
       message?: string;
-      values?: TValues;
-      errors?: TErrors;
+      values?: Prettify<Partial<z.infer<typeof createTicketByClientFormSchema>>>;
+      errors?: z.core.$ZodFlattenedError<
+        z.infer<typeof createTicketByClientFormSchema>
+      >["fieldErrors"];
     }
   | undefined;
-export type CreateTicketByClientFormState = BaseTicketFormState<
-  Partial<z.infer<typeof createTicketByClientFormSchema>>,
-  z.core.$ZodFlattenedError<z.infer<typeof createTicketByClientFormSchema>>["fieldErrors"]
->;
-export type UpdateTicketByClientFormState = BaseTicketFormState<
-  Partial<z.infer<typeof updateTicketByClientFormSchema>>,
-  z.core.$ZodFlattenedError<z.infer<typeof updateTicketByClientFormSchema>>["fieldErrors"]
->;
 
-export type UpdateTicketByAgentPayload =
-  | {
+/**
+ * Payload structure for updates submitted specifically by support agents.
+ * Requires `ticketId` alongside at least one updated property (`status`, `priority`, or `assigned_to_id`).
+ */
+export type UpdateTicketByAgentPayload = Prettify<
+  RequireAtLeastOne<
+    {
       ticketId: string;
       status: string;
-      priority?: undefined;
-      assigned_to_id?: undefined;
-    }
-  | {
-      ticketId: string;
-      status?: undefined;
       priority: string;
-      assigned_to_id?: undefined;
-    }
-  | {
-      ticketId: string;
-      status?: undefined;
-      priority?: undefined;
       assigned_to_id: string;
-    };
+    },
+    "status" | "priority" | "assigned_to_id"
+  >
+>;
