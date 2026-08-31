@@ -1,3 +1,4 @@
+import { NextURL } from "next/dist/server/web/next-url";
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 
@@ -17,14 +18,14 @@ export default auth((req) => {
 
     if (userRole === "AGENT") {
       if (nextUrl.pathname.startsWith("/agent")) {
-        return NextResponse.next();
+        return sanitizeSearchParams(nextUrl);
       }
 
       return NextResponse.redirect(new URL("/agent", nextUrl));
     }
 
     if (nextUrl.pathname.startsWith("/client")) {
-      return NextResponse.next();
+      return sanitizeSearchParams(nextUrl);
     }
 
     return NextResponse.redirect(new URL("/client", nextUrl));
@@ -43,3 +44,22 @@ export const config = {
     "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
+
+function sanitizeSearchParams(nextUrl: NextURL) {
+  const status = nextUrl.searchParams.get("status");
+  const priority = nextUrl.searchParams.get("priority");
+
+  const isStatusInvalid =
+    status !== null && !["OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED"].includes(status);
+  const isPriorityInvalid = priority !== null && !["LOW", "MEDIUM", "HIGH"].includes(priority);
+
+  if (isStatusInvalid || isPriorityInvalid) {
+    const redirectUrl = nextUrl.clone();
+    if (isStatusInvalid) redirectUrl.searchParams.delete("status");
+    if (isPriorityInvalid) redirectUrl.searchParams.delete("priority");
+
+    return NextResponse.redirect(redirectUrl);
+  }
+
+  return NextResponse.next();
+}
