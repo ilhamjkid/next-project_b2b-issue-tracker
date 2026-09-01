@@ -1,5 +1,4 @@
 import {
-  TicketFilterOptions,
   TicketSearchOptions,
   TicketPaginationOptions,
   TicketOutputOptions,
@@ -7,6 +6,8 @@ import {
   TicketFinalFields,
   CreateTicketInputOptions,
   UpdateTicketInputOptions,
+  GetTicketsFilterOptions,
+  GetTicketFilterOptions,
 } from "@/features/tickets/types";
 import { UserJoinedEntity } from "@/features/users/types";
 import {
@@ -30,7 +31,7 @@ export async function getTickets<
 >(options: {
   output: TTicketOutputOptions;
   join: TTicketJoinOptions;
-  filter?: TicketFilterOptions;
+  filter?: GetTicketsFilterOptions;
   search?: TicketSearchOptions;
   pagination?: TicketPaginationOptions;
 }): Promise<
@@ -193,7 +194,7 @@ export async function getTicket<
 >(options: {
   output: TTicketOutputOptions;
   join: TTicketJoinOptions;
-  filter: TicketFilterOptions;
+  filter: GetTicketFilterOptions;
 }): Promise<Result<TicketFinalFields<TTicketOutputOptions, TTicketJoinOptions>>> {
   try {
     const outputFieldsQuery =
@@ -396,7 +397,7 @@ function getTicketJoinQuery(
  * Helper function to compose the SQL `WHERE` clause from combinations of match filter and search options.
  */
 function getTicketWhereQuery(
-  filterOptions: TicketFilterOptions | undefined,
+  filterOptions: GetTicketsFilterOptions | GetTicketFilterOptions | undefined,
   searchOptions: TicketSearchOptions | undefined,
 ) {
   const matchFilterQuery = filterOptions
