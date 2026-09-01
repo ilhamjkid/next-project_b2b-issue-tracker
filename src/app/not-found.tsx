@@ -3,7 +3,7 @@ import { HelpCircle } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { auth } from "@/lib/auth";
 
-export default async function NotFound() {
+export default async function RootNotFound() {
   const session = await auth();
   const isLoggedIn = !!session;
   const isAgent = session?.user.role === "AGENT";
