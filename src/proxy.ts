@@ -48,15 +48,21 @@ export const config = {
 function sanitizeSearchParams(nextUrl: NextURL) {
   const status = nextUrl.searchParams.get("status");
   const priority = nextUrl.searchParams.get("priority");
+  const limit = nextUrl.searchParams.get("limit");
+  const page = nextUrl.searchParams.get("page");
 
   const isStatusInvalid =
     status !== null && !["OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED"].includes(status);
   const isPriorityInvalid = priority !== null && !["LOW", "MEDIUM", "HIGH"].includes(priority);
+  const isLimitInvalid = limit !== null && !["5", "10", "25", "50", "100"].includes(limit);
+  const isPageInvalid = page !== null && (!/^\d+$/.test(String(page)) || parseInt(page, 10) < 1);
 
-  if (isStatusInvalid || isPriorityInvalid) {
+  if (isStatusInvalid || isPriorityInvalid || isLimitInvalid || isPageInvalid) {
     const redirectUrl = nextUrl.clone();
     if (isStatusInvalid) redirectUrl.searchParams.delete("status");
     if (isPriorityInvalid) redirectUrl.searchParams.delete("priority");
+    if (isLimitInvalid) redirectUrl.searchParams.delete("limit");
+    if (isPageInvalid) redirectUrl.searchParams.delete("page");
 
     return NextResponse.redirect(redirectUrl);
   }
