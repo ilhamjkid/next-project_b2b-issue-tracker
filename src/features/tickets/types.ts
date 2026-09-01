@@ -68,14 +68,25 @@ export type TicketFinalFields<
 >;
 
 /**
- * Options for filtering ticket queries by specific field matches.
- * Enforces providing at least one filter criterion.
+ * Base filtering structure for ticket entity fields.
+ * Internal type used to derive single and multiple ticket query options.
  */
-export type TicketFilterOptions = Prettify<
-  RequireAtLeastOne<
-    Record<"id" | "status" | "priority" | "created_by_id" | "assigned_to_id", string | null>
-  >
+type BaseTicketFilterOptions = Record<
+  "id" | "status" | "priority" | "created_by_id" | "assigned_to_id",
+  string | null
 >;
+
+/**
+ * Options for filtering multiple ticket queries.
+ * All fields are optional, allowing unfiltered retrieval when empty.
+ */
+export type GetTicketsFilterOptions = Prettify<Partial<BaseTicketFilterOptions>>;
+
+/**
+ * Options for filtering a single ticket query.
+ * Requires at least one filter criterion to target a specific ticket.
+ */
+export type GetTicketFilterOptions = Prettify<RequireAtLeastOne<BaseTicketFilterOptions>>;
 
 /**
  * Configures text search parameters across specified ticket text fields.
