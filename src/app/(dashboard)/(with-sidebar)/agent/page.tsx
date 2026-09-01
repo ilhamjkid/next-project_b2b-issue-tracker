@@ -1,28 +1,18 @@
 import { Metadata } from "next";
-import Link from "next/link";
 import { SidebarInset } from "@/components/ui/sidebar";
-import { buttonVariants } from "@/components/ui/button";
 import { DashboardHeader } from "@/components/shared/dashboard-header";
 import { requireAuth } from "@/lib/access";
 
 export const metadata: Metadata = {
-  title: "Ticket Detail",
+  title: "Dashboard",
 };
 
-export default async function ClientTicketDetailPage(props: {
-  params: Promise<{ ticketId: string }>;
-}) {
-  const user = await requireAuth("CLIENT");
-  const params = await props.params;
-  const ticketId = params.ticketId;
+export default async function AgentDashboardPage() {
+  const user = await requireAuth("AGENT");
 
   return (
     <SidebarInset>
-      <DashboardHeader role={user.role} title={ticketId}>
-        <Link href="/client" className={buttonVariants()}>
-          Back to Dashboard
-        </Link>
-      </DashboardHeader>
+      <DashboardHeader userRole={user.role} title="Overview & Tickets" />
       <main className="flex flex-1 flex-col gap-4 p-4 pt-0">
         <div className="grid auto-rows-min gap-4 md:grid-cols-3">
           <div className="aspect-video rounded-xl bg-muted/50" />
