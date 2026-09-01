@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { Inbox } from "lucide-react";
 import { SidebarInset } from "@/components/ui/sidebar";
+import { Card, CardContent } from "@/components/ui/card";
 import { AgentUserHeader } from "@/features/users/components/agent-user-header";
 import { UserTable } from "@/features/users/components/user-table";
 import { getUsers } from "@/features/users/queries";
@@ -32,7 +33,11 @@ export default async function AgentManageUsersPage() {
       <AgentUserHeader userRole={user.role} />
       <section className="p-4">
         {users.length > 0 ? (
-          <UserTable users={users} />
+          <Card>
+            <CardContent>
+              <UserTable users={users} />
+            </CardContent>
+          </Card>
         ) : (
           <div className="text-center">
             <Inbox className="w-20 h-20 text-warning mx-auto mb-4" />
