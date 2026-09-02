@@ -59,7 +59,7 @@ export function ClientTicketTable({
                       href={`/client/tickets/${ticket.id}`}
                       className={buttonVariants({ variant: "secondary", size: "sm" })}
                     >
-                      View Detail
+                      View Details
                     </Link>
                   </TableCell>
                 </TableRow>
