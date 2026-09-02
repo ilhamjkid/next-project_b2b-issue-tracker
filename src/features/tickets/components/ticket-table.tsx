@@ -14,7 +14,7 @@ import { TicketFilter } from "@/features/tickets/components/ticket-filter";
 import { TicketPagination } from "@/features/tickets/components/ticket-pagination";
 import { TicketEntity, TicketJoinUserEntity } from "@/features/tickets/types";
 import { Prettify } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 
 type ClientTicketTableProps = {
   userRole: "CLIENT";
@@ -76,12 +76,7 @@ export function TicketTable({
                     </>
                   )}
 
-                  <TableCell>
-                    {new Intl.DateTimeFormat("en-US", {
-                      dateStyle: "medium",
-                      timeStyle: "short",
-                    }).format(ticket.created_at)}
-                  </TableCell>
+                  <TableCell>{formatDate(ticket.created_at)}</TableCell>
                   <TableCell>
                     <Link
                       href={`/${userRole.toLowerCase()}/tickets/${ticket.id}`}

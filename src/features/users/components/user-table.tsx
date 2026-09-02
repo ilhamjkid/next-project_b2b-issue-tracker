@@ -14,6 +14,7 @@ import { UserFormDialog } from "@/features/users/components/user-form-dialog";
 import { UserDeleteDialog } from "@/features/users/components/user-delete-dialog";
 import { UserActiveDialog, UserEntity } from "@/features/users/types";
 import { Prettify } from "@/lib/types";
+import { formatDate } from "@/lib/utils";
 
 export function UserTable({
   users,
@@ -42,12 +43,7 @@ export function UserTable({
             <TableCell>{user.name}</TableCell>
             <TableCell>{user.email}</TableCell>
             <TableCell>{user.role}</TableCell>
-            <TableCell>
-              {new Intl.DateTimeFormat("en-US", {
-                dateStyle: "medium",
-                timeStyle: "short",
-              }).format(user.created_at)}
-            </TableCell>
+            <TableCell>{formatDate(user.created_at)}</TableCell>
             <TableCell className="flex gap-1">
               {activeDialog.type === "UPDATE" && activeDialog.id === user.id ? (
                 <UserFormDialog
