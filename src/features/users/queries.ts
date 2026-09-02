@@ -10,19 +10,23 @@ import { getOutputFieldsQuery, isPostgresError } from "@/lib/db/utils";
 import { sql } from "@/lib/db/client";
 
 /**
- * Fetches all user records from the database ordered by creation date descending.
- * Supports explicit field filtering or defaults to full entity extraction.
+ * Fetches user records ordered by creation date descending.
+ * Supports explicit field selection and optional filtering (e.g., by role).
  */
 export async function getUsers<
   TUserOutputOptions extends UserOutputOptions | "ALL_FIELDS" = UserOutputOptions | "ALL_FIELDS",
 >(options: {
   output: TUserOutputOptions;
+  filter?: { role?: string };
 }): Promise<Result<UserOutputFields<TUserOutputOptions>[]>> {
   try {
     const outputFieldsQuery = getOutputFieldsQuery(options.output);
 
+    const whereQuery = options.filter?.role ? sql`WHERE role = ${options.filter.role}` : sql``;
+
     const users = await sql<UserOutputFields<TUserOutputOptions>[]>`
-      SELECT ${outputFieldsQuery} FROM users ORDER BY created_at DESC
+      SELECT ${outputFieldsQuery} FROM users
+      ${whereQuery} ORDER BY created_at DESC
     `;
     return { success: true, data: users };
   } catch (error) {
