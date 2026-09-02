@@ -75,6 +75,7 @@ export function TicketFilter() {
           }}
           value={localSearchValue}
           disabled={isPending}
+          autoComplete="off"
         />
         <InputGroupAddon>
           <SearchIcon />

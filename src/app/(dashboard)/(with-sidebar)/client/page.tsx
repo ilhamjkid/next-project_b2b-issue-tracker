@@ -1,9 +1,9 @@
 import { Metadata } from "next";
 import { CheckCircle2Icon, CircleDotIcon, TicketsIcon } from "lucide-react";
 import { SidebarInset } from "@/components/ui/sidebar";
-import { StatCard } from "@/components/shared/stat-card";
 import { ClientTicketHeader } from "@/features/tickets/components/client-ticket-header";
-import { ClientTicketTable } from "@/features/tickets/components/client-ticket-table";
+import { StatCard } from "@/components/shared/stat-card";
+import { TicketTable } from "@/features/tickets/components/ticket-table";
 import { getTickets, getTicketStatsByClient } from "@/features/tickets/queries";
 import { requireAuth } from "@/lib/access";
 
@@ -38,8 +38,15 @@ export default async function ClientDashboardPage(props: {
         created_at: true,
       },
       join: null,
-      filter: { created_by_id: user.id, status, priority },
-      search: { fields: ["title", "description"], keyword: search },
+      filter: {
+        created_by_id: user.id,
+        status,
+        priority,
+      },
+      search: {
+        fields: ["title", "description"],
+        keyword: search,
+      },
       pagination: { limit, page },
     }),
   ]);
@@ -79,7 +86,8 @@ export default async function ClientDashboardPage(props: {
             <StatCard key={stat.label} stat={stat} />
           ))}
         </div>
-        <ClientTicketTable
+        <TicketTable
+          userRole={user.role}
           tickets={ticketsResult.data.data}
           totalTickets={ticketsResult.data.total}
         />
