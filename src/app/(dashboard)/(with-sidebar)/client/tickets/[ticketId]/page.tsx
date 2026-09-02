@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { DashboardHeader } from "@/components/shared/dashboard-header";
 import { getTicket } from "@/features/tickets/queries";
 import { requireAuth } from "@/lib/access";
-import { cn } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 
 const comments: {
   id: string;
@@ -86,7 +86,7 @@ export default async function ClientTicketDetailPage(props: {
                 </Badge>
               </div>
             </div>
-            <CardDescription>Created at {ticket.created_at.toLocaleDateString()}</CardDescription>
+            <CardDescription>Created at {formatDate(ticket.created_at)}</CardDescription>
           </CardHeader>
           <CardContent className="max-h-20 overflow-y-auto scrollbar-none">
             <p className="text-base">{ticket.description}</p>
@@ -111,7 +111,7 @@ export default async function ClientTicketDetailPage(props: {
                       <Badge>{comment.user.role}</Badge>
                     </div>
                     <span className="text-xs text-muted-foreground">
-                      {comment.created_at.toLocaleDateString("en-US", {
+                      {formatDate(comment.created_at, {
                         month: "short",
                         day: "numeric",
                         year: "numeric",
