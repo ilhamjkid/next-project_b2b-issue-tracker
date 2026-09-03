@@ -27,6 +27,7 @@ export default async function ClientDashboardPage(props: {
   const priority = searchParams?.priority;
   const limit = Number(searchParams?.limit ?? "5");
   const page = Number(searchParams?.page ?? "1");
+
   const [ticketStatsResult, ticketsResult] = await Promise.all([
     getTicketStatsByClient({ clientUserId: user.id }),
     getTickets({
@@ -50,11 +51,9 @@ export default async function ClientDashboardPage(props: {
       pagination: { limit, page },
     }),
   ]);
-
   if (!ticketStatsResult.success) {
     throw new Error(ticketStatsResult.message ?? "Internal Server Error");
   }
-
   if (!ticketsResult.success) {
     throw new Error(ticketsResult.message ?? "Internal Server Error");
   }

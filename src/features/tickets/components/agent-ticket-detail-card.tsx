@@ -10,8 +10,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { UserEntity } from "@/features/users/types";
 import { TicketEntity } from "@/features/tickets/types";
+import { UserEntity } from "@/features/users/types";
 import { handleUpdateTicketByAgent } from "@/features/tickets/actions";
 import { Prettify, UnderscoreToSpace } from "@/lib/types";
 import { cn, formatDate } from "@/lib/utils";

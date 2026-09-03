@@ -27,6 +27,7 @@ export default async function AgentDashboardPage(props: {
   const priority = searchParams?.priority;
   const limit = Number(searchParams?.limit ?? "5");
   const page = Number(searchParams?.page ?? "1");
+
   const [ticketStatsResult, ticketsResult] = await Promise.all([
     getTicketStatsByAgent(),
     getTickets({
@@ -49,11 +50,9 @@ export default async function AgentDashboardPage(props: {
       pagination: { limit, page },
     }),
   ]);
-
   if (!ticketStatsResult.success) {
     throw new Error(ticketStatsResult.message ?? "Internal Server Error");
   }
-
   if (!ticketsResult.success) {
     throw new Error(ticketsResult.message ?? "Internal Server Error");
   }

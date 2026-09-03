@@ -256,7 +256,7 @@ export async function createTicket<
   } catch (error) {
     if (isPostgresError(error)) {
       if (error.code === "22P02") {
-        return { success: false, message: "Ticket data not found." };
+        return { success: false, message: "Invalid field data type." };
       }
 
       if (error.code === "23503") {
@@ -305,7 +305,7 @@ export async function updateTicketById<
   } catch (error) {
     if (isPostgresError(error)) {
       if (error.code === "22P02") {
-        return { success: false, message: "Ticket data not found." };
+        return { success: false, message: "Invalid field data type." };
       }
 
       if (error.code === "23503") {
@@ -334,7 +334,7 @@ export async function deleteTicketById(options: {
     return { success: true, data: ticket };
   } catch (error) {
     if (isPostgresError(error) && error.code === "22P02") {
-      return { success: false, message: "Ticket data not found." };
+      return { success: false, message: "Invalid field data type." };
     }
 
     console.error("[DATABASE] Query error.\n", error);

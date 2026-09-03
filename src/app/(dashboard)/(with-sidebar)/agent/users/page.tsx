@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { Inbox } from "lucide-react";
+import { InboxIcon } from "lucide-react";
 import { SidebarInset } from "@/components/ui/sidebar";
 import { Card, CardContent } from "@/components/ui/card";
 import { AgentUserHeader } from "@/features/users/components/agent-user-header";
@@ -13,6 +13,7 @@ export const metadata: Metadata = {
 
 export default async function AgentManageUsersPage() {
   const user = await requireAuth("AGENT");
+
   const userResult = await getUsers({
     output: {
       id: true,
@@ -25,7 +26,6 @@ export default async function AgentManageUsersPage() {
   if (!userResult.success) {
     throw new Error(userResult.message ?? "Internal Server Error");
   }
-
   const { data: users } = userResult;
 
   return (
@@ -40,7 +40,7 @@ export default async function AgentManageUsersPage() {
           </Card>
         ) : (
           <div className="text-center">
-            <Inbox className="w-20 h-20 text-warning mx-auto mb-4" />
+            <InboxIcon className="w-20 h-20 text-warning mx-auto mb-4" />
             <h2 className="text-3xl mb-2">Empty user</h2>
             <p className="text-muted-foreground text-lg">User account empty. Add one.</p>
           </div>

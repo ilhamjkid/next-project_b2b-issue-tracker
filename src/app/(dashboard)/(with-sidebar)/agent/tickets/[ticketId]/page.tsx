@@ -6,21 +6,12 @@ import { buttonVariants } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { DashboardHeader } from "@/components/shared/dashboard-header";
 import { AgentTicketDetailCard } from "@/features/tickets/components/agent-ticket-detail-card";
-import { TicketCommentList } from "@/features/tickets/components/ticket-comment-list";
-import { AgentTicketCommentForm } from "@/features/tickets/components/agent-ticket-comment-form";
+import { CommentList } from "@/features/comments/components/comment-list";
+import { AgentCommentForm } from "@/features/comments/components/agent-comment-form";
 import { getTicket } from "@/features/tickets/queries";
 import { getUsers } from "@/features/users/queries";
+import { getComments } from "@/features/comments/queries";
 import { requireAuth } from "@/lib/access";
-
-const comments: {
-  id: string;
-  content: string;
-  user: {
-    name: string;
-    role: "AGENT" | "CLIENT";
-  };
-  created_at: Date;
-}[] = [];
 
 export const metadata: Metadata = {
   title: "Ticket Details",
@@ -31,6 +22,7 @@ export default async function AgentTicketDetailPage(props: {
 }) {
   const user = await requireAuth("AGENT");
   const params = await props.params;
+
   const [ticketResult, usersResult] = await Promise.all([
     getTicket({
       output: {
@@ -58,9 +50,18 @@ export default async function AgentTicketDetailPage(props: {
   if (!usersResult.success) {
     throw new Error(usersResult.message ?? "Internal Server Error");
   }
-
   const { data: ticket } = ticketResult;
   const { data: users } = usersResult;
+
+  const commentsResult = await getComments({
+    output: { id: true, content: true, created_at: true },
+    join: { user: { name: true, role: true } },
+    filter: { ticket_id: ticket.id },
+  });
+  if (!commentsResult.success) {
+    throw new Error(commentsResult.message ?? "Internal Server Error");
+  }
+  const { data: comments } = commentsResult;
 
   return (
     <SidebarInset className="h-screen">
@@ -74,8 +75,8 @@ export default async function AgentTicketDetailPage(props: {
         <Separator />
         <div className="min-h-0 flex flex-1 flex-col gap-4">
           <h3 className="text-xl font-semibold">Activity & Comments</h3>
-          <TicketCommentList userRole={user.role} comments={comments} />
-          <AgentTicketCommentForm />
+          <CommentList userRole={user.role} comments={comments} />
+          <AgentCommentForm ticketId={ticket.id} />
         </div>
       </section>
     </SidebarInset>
