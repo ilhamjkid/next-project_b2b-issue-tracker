@@ -19,7 +19,7 @@ export function CommentList({
   return (
     <div className="flex flex-1 flex-col-reverse gap-4 p-4 border rounded-xl overflow-y-auto scrollbar-none">
       {comments.length > 0 ? (
-        comments.map((comment) => (
+        comments.reverse().map((comment) => (
           <div
             key={comment.id}
             className={cn("max-w-[90%] p-4 border rounded-lg sm:max-w-[80%]", {

@@ -122,7 +122,7 @@ export async function updateUserById<
   } catch (error) {
     if (isPostgresError(error)) {
       if (error.code === "22P02") {
-        return { success: false, message: "User data not found." };
+        return { success: false, message: "Invalid field data type." };
       }
 
       if (error.code === "23505") {
@@ -151,7 +151,7 @@ export async function deleteUserById(options: {
     return { success: true, data: user };
   } catch (error) {
     if (isPostgresError(error) && error.code === "22P02") {
-      return { success: false, message: "User data not found." };
+      return { success: false, message: "Invalid field data type." };
     }
 
     console.error("[DATABASE] Query error.\n", error);
