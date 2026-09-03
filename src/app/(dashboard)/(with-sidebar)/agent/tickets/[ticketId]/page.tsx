@@ -1,12 +1,29 @@
+import { notFound } from "next/navigation";
 import { Metadata } from "next";
 import Link from "next/link";
 import { SidebarInset } from "@/components/ui/sidebar";
 import { buttonVariants } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { DashboardHeader } from "@/components/shared/dashboard-header";
+import { AgentTicketDetailCard } from "@/features/tickets/components/agent-ticket-detail-card";
+import { TicketCommentList } from "@/features/tickets/components/ticket-comment-list";
+import { AgentTicketCommentForm } from "@/features/tickets/components/agent-ticket-comment-form";
+import { getTicket } from "@/features/tickets/queries";
+import { getUsers } from "@/features/users/queries";
 import { requireAuth } from "@/lib/access";
 
+const comments: {
+  id: string;
+  content: string;
+  user: {
+    name: string;
+    role: "AGENT" | "CLIENT";
+  };
+  created_at: Date;
+}[] = [];
+
 export const metadata: Metadata = {
-  title: "Ticket Detail",
+  title: "Ticket Details",
 };
 
 export default async function AgentTicketDetailPage(props: {
@@ -14,23 +31,53 @@ export default async function AgentTicketDetailPage(props: {
 }) {
   const user = await requireAuth("AGENT");
   const params = await props.params;
-  const ticketId = params.ticketId;
+  const [ticketResult, usersResult] = await Promise.all([
+    getTicket({
+      output: {
+        id: true,
+        title: true,
+        description: true,
+        status: true,
+        priority: true,
+        assigned_to_id: true,
+        created_at: true,
+      },
+      join: null,
+      filter: { id: params.ticketId },
+    }),
+    getUsers({
+      output: { id: true, email: true },
+      filter: { role: "AGENT" },
+    }),
+  ]);
+  if (!ticketResult.success) {
+    if (ticketResult.message === "Ticket data not found.") return notFound();
+
+    throw new Error(ticketResult.message ?? "Internal Server Error");
+  }
+  if (!usersResult.success) {
+    throw new Error(usersResult.message ?? "Internal Server Error");
+  }
+
+  const { data: ticket } = ticketResult;
+  const { data: users } = usersResult;
 
   return (
-    <SidebarInset>
-      <DashboardHeader userRole={user.role} title={ticketId}>
+    <SidebarInset className="h-screen">
+      <DashboardHeader userRole={user.role} title="Ticket Details">
         <Link href="/agent" className={buttonVariants()}>
           Back to Dashboard
         </Link>
       </DashboardHeader>
-      <main className="flex flex-1 flex-col gap-4 p-4 pt-0">
-        <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-          <div className="aspect-video rounded-xl bg-muted/50" />
-          <div className="aspect-video rounded-xl bg-muted/50" />
-          <div className="aspect-video rounded-xl bg-muted/50" />
+      <section className="min-h-0 flex flex-1 flex-col gap-4 p-4">
+        <AgentTicketDetailCard ticket={ticket} users={users} />
+        <Separator />
+        <div className="min-h-0 flex flex-1 flex-col gap-4">
+          <h3 className="text-xl font-semibold">Activity & Comments</h3>
+          <TicketCommentList userRole={user.role} comments={comments} />
+          <AgentTicketCommentForm />
         </div>
-        <div className="min-h-screen flex-1 rounded-xl bg-muted/50 md:min-h-min" />
-      </main>
+      </section>
     </SidebarInset>
   );
 }
