@@ -1,36 +1,59 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MVP B2B Issue Tracker
 
-## Getting Started
+A web-based ticketing system built for managing B2B issues efficiently with role-based access control (RBAC).
 
-First, run the development server:
+## 🚀 Key Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **Authentication & RBAC**: Session management powered by NextAuth with role-tailored access (`CLIENT` and `AGENT`).
+- **Ticket Management**: Create, filter by status or priority, and update ticket details seamlessly.
+- **Activity & Comments Feed**:
+  - Interactive discussion threads on ticket details pages.
+  - **Internal Note** support exclusively for Agents (`is_internal` flag), strictly hidden from Client views.
+- **User Management**: Administrative interface for Agents to manage user.
+- **Profile Settings**: Profile management interface for Clients to update personal details.
+- **Modern Adaptive UI**: Fully responsive interface supporting both Dark and Light modes powered by `oklch` color scales.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🛠️ Tech Stack
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Framework**: Next.js (App Router, Server Actions)
+- **Authentication**: NextAuth.js
+- **Database**: Neon PostgreSQL
+- **Query Builder / Client**: `postgres.js` (Dynamic SQL & JSON Helpers)
+- **Styling**: Tailwind CSS, shadcn/ui
+- **Package Manager**: pnpm
+- **Type Safety**: TypeScript
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## ⚙️ Getting Started
 
-## Learn More
+1. **Clone the repository & Install dependencies**
 
-To learn more about Next.js, take a look at the following resources:
+   ```bash
+   pnpm install
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+2. **Environment Variables**
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+   Create a `.env.local` file and configure your database and authentication keys:
 
-## Deploy on Vercel
+   ```env
+   # Database Connection
+   DATABASE_URL=""
+   DIRECT_URL=""
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+   # NextAuth v5 Config
+   AUTH_SECRET=""
+   ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+3. **Seed the Database**
+
+   Populate the database with initial dummy data (users, tickets, comments):
+
+   ```bash
+   pnpm db:seed
+   ```
+
+4. **Run Development Server**
+
+   ```bash
+   pnpm dev
+   ```
