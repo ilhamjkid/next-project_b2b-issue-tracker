@@ -1,6 +1,15 @@
 version: 2
 updates:
+  # Bun dependencies (package.json + bun.lock)
   - package-ecosystem: "bun"
     directory: "/"
     schedule:
       interval: "weekly"
+    # Cap how many open PRs Dependabot keeps at once
+    open-pull-requests-limit: 10
+    groups:
+      # Combine all minor/patch bumps into a single PR instead of many small ones
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
