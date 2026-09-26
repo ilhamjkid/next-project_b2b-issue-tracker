@@ -1,3 +1,17 @@
+# .github/workflows/notify-portfolio.yml
+# =============================================================================
+# Notify Portfolio to Rebuild
+# -----------------------------------------------------------------------------
+# When this repo is updated, ping the portfolio repo so it rebuilds itself
+# via the "project-updated" repository_dispatch event.
+#
+# Required secret:
+#   PORTFOLIO_TOKEN - a PAT (classic: scope `repo`; fine-grained:
+#                     "Contents: Read and write" on the TARGET repo).
+#
+# The event_type below MUST match `repository_dispatch.types` in the
+# receiving repo's workflow (see deploy.yml -> types: [project-updated]).
+# =============================================================================
 name: Notify Portfolio to Rebuild
 
 on:
@@ -8,9 +22,13 @@ jobs:
   ping-portfolio:
     runs-on: ubuntu-latest
     steps:
+      # Send a repository_dispatch event to the portfolio repo.
+      # -f / --fail makes curl exit non-zero on HTTP 4xx/5xx,
+      # so the workflow actually fails when the token is invalid or expired
+      # (without -f, curl would silently "succeed").
       - name: Trigger Portfolio Rebuild
         run: |
-          curl -X POST \
+          curl -f -X POST \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer ${{ secrets.PORTFOLIO_TOKEN }}" \
             https://api.github.com/repos/ilhamjkid/ilhamjkid.github.io/dispatches \
